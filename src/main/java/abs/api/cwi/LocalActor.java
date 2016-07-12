@@ -1,7 +1,6 @@
 package abs.api.cwi;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,21 +47,7 @@ public class LocalActor extends AbstractActor {
 		synchronized (executorIsRunning) {
 			return executorIsRunning.compareAndSet(false, true);
 		}
-	}
-	
-	public void notifyLocked(ABSFuture<?> futureLock){
-		if (this.futureContinuations != null)
-			if (this.futureContinuations.containsKey(futureLock.f)) {
-				Set<ABSFuture<?>> continuations = this.futureContinuations.remove(futureLock.f);
-				Iterator<ABSFuture<?>> it = continuations.iterator();
-				while(it.hasNext()){
-					ABSFuture<?> continuation = it.next();
-					this.send(continuation);
-				}
-			}
-
-	}
-	
+	}	
 	
 
 	@Override

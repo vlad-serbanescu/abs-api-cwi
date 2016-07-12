@@ -198,14 +198,14 @@ public abstract class AbstractActor implements Comparable<AbstractActor>,Actor {
 					}
 			}
 
-		if(lockedOnFutureActors!=null){
+		/*if(lockedOnFutureActors!=null){
 			Set<LocalActor> freedActors = lockedOnFutureActors.get(m);
 			if(freedActors!=null){
 				for (LocalActor localActor : freedActors) {
 					localActor.notifyLocked(m);
 				}
 			}
-		}
+		}*/
 
 		
 		if (localActorMap != null)
