@@ -22,7 +22,7 @@ import javax.net.ServerSocketFactory;
  * system. The Actors can either be reachable Actors on this machine. The Actors
  * can be remote actors that are reachable on other machines.
  */
-public class ReachableActor extends DeploymentComponent {
+public class ReachableActor extends AbstractActor {
 
 	/** The name. A URI describing the location */
 	private URI name;

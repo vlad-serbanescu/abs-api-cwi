@@ -32,7 +32,7 @@ public class MachineListener implements Runnable {
 
 					if (target.getUserInfo().equals("abs")) {
 
-						ReachableActor targetActor = DeploymentComponent.actorMap.get(target);
+						ReachableActor targetActor = AbstractActor.actorMap.get(target);
 
 						do {
 							input = execOis.readObject();
@@ -48,7 +48,7 @@ public class MachineListener implements Runnable {
 					} else {
 						URI futureID = (URI) input;
 
-						CompletableFuture expectedResult = (CompletableFuture) DeploymentComponent.remoteUncompletedFutures
+						CompletableFuture expectedResult = (CompletableFuture) AbstractActor.remoteUncompletedFutures
 								.get(futureID);
 
 						input = execOis.readObject();

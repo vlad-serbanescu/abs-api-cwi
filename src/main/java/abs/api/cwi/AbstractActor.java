@@ -17,6 +17,7 @@ import java.net.UnknownHostException;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -48,7 +49,7 @@ import javax.net.ServerSocketFactory;
 /**
  * The Class ABSActor.
  */
-public abstract class DeploymentComponent implements Comparable<DeploymentComponent>,Actor {
+public abstract class AbstractActor implements Comparable<AbstractActor>,Actor {
 
 	/** The Constant IS_REMOTE. */
 	final static int IS_REMOTE = 1;
@@ -71,9 +72,13 @@ public abstract class DeploymentComponent implements Comparable<DeploymentCompon
 
 	public static ConcurrentSkipListSet<LocalActor> localActorMap = null;
 
-	public static ConcurrentHashMap<URI, List<DeploymentComponent>> remotePassedFutures;
+	public static ConcurrentHashMap<URI, List<AbstractActor>> remotePassedFutures;
 
 	public static ConcurrentHashMap<URI, Future<?>> remoteUncompletedFutures = null;
+	
+	public static ConcurrentHashMap<ABSFuture<?>, Set<LocalActor>> lockedOnFutureActors = null;
+	
+	//TODO use this map to notify Actors of a completed future and avoid looping through the entire map of actors
 
 	/** The main executor. */
 	// static ActorExecutor mainExecutor = null;
@@ -85,7 +90,7 @@ public abstract class DeploymentComponent implements Comparable<DeploymentCompon
 	/**
 	 * Instantiates a new ABS actor.
 	 */
-	public DeploymentComponent() {
+	public AbstractActor() {
 		// if (mainExecutor == null)
 		// mainExecutor = new ActorExecutor(0, 100, 0L, null, null);
 		if (hostName == null) {
@@ -183,19 +188,34 @@ public abstract class DeploymentComponent implements Comparable<DeploymentCompon
 					for (Supplier<Boolean> condition : actor.conditionContinuations.keySet()) {
 						if (condition.get() == true) {
 							Set<ABSFuture<?>> continuations = actor.conditionContinuations.remove(condition);
-							for (ABSFuture<?> continuation : continuations) {
+							Iterator<ABSFuture<?>> it = continuations.iterator();
+							while(it.hasNext()){
+								ABSFuture<?> continuation = it.next();
 								actor.send(continuation);
 							}
+							
 						}
 					}
 			}
 
+		if(lockedOnFutureActors!=null){
+			Set<LocalActor> freedActors = lockedOnFutureActors.get(m);
+			if(freedActors!=null){
+				for (LocalActor localActor : freedActors) {
+					localActor.notifyLocked(m);
+				}
+			}
+		}
+
+		
 		if (localActorMap != null)
 			for (LocalActor actor : localActorMap) {
 				if (actor.futureContinuations != null)
 					if (actor.futureContinuations.containsKey(m.f)) {
 						Set<ABSFuture<?>> continuations = actor.futureContinuations.remove(m.f);
-						for (ABSFuture<?> continuation : continuations) {
+						Iterator<ABSFuture<?>> it = continuations.iterator();
+						while(it.hasNext()){
+							ABSFuture<?> continuation = it.next();
 							actor.send(continuation);
 						}
 					}
@@ -212,8 +232,8 @@ public abstract class DeploymentComponent implements Comparable<DeploymentCompon
 			}
 
 		if (remotePassedFutures != null) {
-			List<DeploymentComponent> actors = remotePassedFutures.get(m.futureID);
-			for (DeploymentComponent deploymentComponent : actors) {
+			List<AbstractActor> actors = remotePassedFutures.get(m.futureID);
+			for (AbstractActor deploymentComponent : actors) {
 				ObjectOutputStream destination = machineOutputStreams.get(deploymentComponent.hostName);
 				try {
 					destination.writeObject(m.futureID);
@@ -266,7 +286,7 @@ public abstract class DeploymentComponent implements Comparable<DeploymentCompon
 
 	}
 
-	public int compareTo(DeploymentComponent o) {
+	public int compareTo(AbstractActor o) {
 		return this.hashCode() - o.hashCode();
 	}
 }

@@ -28,7 +28,7 @@ public class ABSFuture<V> implements Serializable {
 
 	public ABSFuture(Runnable message, int status, String hostname) {
 		this(hostname);
-		if (status == DeploymentComponent.IS_REACHABLE) {
+		if (status == AbstractActor.IS_REACHABLE) {
 			runningF = new FutureTask<V>(message, null);
 		}
 
@@ -36,7 +36,7 @@ public class ABSFuture<V> implements Serializable {
 
 	public ABSFuture(Callable<V> message, int status, String hostname) {
 		this(hostname);
-		if (status == DeploymentComponent.IS_REACHABLE) {
+		if (status == AbstractActor.IS_REACHABLE) {
 			runningF = new FutureTask<V>(message);
 		}
 

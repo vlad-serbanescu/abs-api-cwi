@@ -26,22 +26,22 @@ public class MainSocketConnection implements Runnable {
 				ObjectInputStream ois = new ObjectInputStream(
 						s.getInputStream());
 
-				if (DeploymentComponent.machineOutputStreams == null) {
-					DeploymentComponent.machineOutputStreams = new ConcurrentHashMap<String, ObjectOutputStream>();
+				if (AbstractActor.machineOutputStreams == null) {
+					AbstractActor.machineOutputStreams = new ConcurrentHashMap<String, ObjectOutputStream>();
 				}
 
-				if (DeploymentComponent.machineOutputStreams.containsKey(
+				if (AbstractActor.machineOutputStreams.containsKey(
 						s.getInetAddress().getHostAddress()) == false)
-					DeploymentComponent.machineOutputStreams
+					AbstractActor.machineOutputStreams
 							.put(s.getInetAddress().getHostAddress(), oos);
 
-				if (DeploymentComponent.machineInputStreams == null) {
-					DeploymentComponent.machineInputStreams = new ConcurrentHashMap<String, ObjectInputStream>();
+				if (AbstractActor.machineInputStreams == null) {
+					AbstractActor.machineInputStreams = new ConcurrentHashMap<String, ObjectInputStream>();
 				}
 
-				if (DeploymentComponent.machineInputStreams.containsKey(
+				if (AbstractActor.machineInputStreams.containsKey(
 						s.getInetAddress().getHostAddress()) == false) {
-					DeploymentComponent.machineInputStreams
+					AbstractActor.machineInputStreams
 							.put(s.getInetAddress().getHostAddress(), ois);
 
 					new Thread(new MachineListener(ois)).start();
