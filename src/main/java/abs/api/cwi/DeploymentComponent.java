@@ -52,7 +52,7 @@ import javax.net.ServerSocketFactory;
  */
 public class DeploymentComponent  {
 	
-	public static ConcurrentHashMap<ABSFutureTask<?>, Set<Actor>> lockedOnFutureActors = new ConcurrentHashMap<>();
+private static ConcurrentHashMap<ABSFutureTask<?>, Set<Actor>> lockedOnFutureActors = new ConcurrentHashMap<>();
 	
 	/** The main executor. */
 	private static ExecutorService mainExecutor = Executors.newCachedThreadPool();;
@@ -71,5 +71,16 @@ public class DeploymentComponent  {
 			}
 		}
 		System.out.println("Finished releasing");
+	}
+
+	public static void lockActorOnFuture(Actor a, ABSFutureTask<?> future) {
+		if(lockedOnFutureActors.containsKey(future)){
+			lockedOnFutureActors.get(future).add(a);
+		}
+		else{
+			Set<Actor> dependingActors = new HashSet<>();
+			dependingActors.add(a);
+			lockedOnFutureActors.put(future, dependingActors);
+		}		
 	}
 }
