@@ -8,46 +8,33 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
-public class ABSFutureTask<V> implements Serializable {
+public class ABSFutureTask<V> implements Serializable, Future<V>, Runnable {
 
-	protected final Supplier<Boolean> enablingCondition;
-	
+	protected Guard enablingCondition = null;
 	protected final CompletableFuture<V> f;
-	protected final FutureTask<V> runningF;
-	public final URI futureID;
+	protected FutureTask<V> runningF = null;
 
-	public ABSFutureTask(Runnable message, int status, String hostname) {
-		this(message, status, hostname, new CompletableFuture<>());
+	ABSFutureTask(Runnable message) {
+		runningF = new FutureTask<>(message, null);
+		f = new CompletableFuture<V>();
 	}
 
-	public ABSFutureTask(Callable<V> message, int status, String hostname) {
-		this(message, status, hostname, new CompletableFuture<>());
+	ABSFutureTask(Callable<V> message) {
+		runningF = new FutureTask<>(message);
+		f = new CompletableFuture<V>();
 	}
 	
-	public ABSFutureTask(Callable<V> message, int status, String hostname, CompletableFuture<V> callerFuture) {
-		this(new FutureTask<V>(message), status, hostname, callerFuture, null);
-	}
-	
-	public ABSFutureTask(Runnable message, int status, String hostname, CompletableFuture<V> callerFuture) {
-		this(new FutureTask<V>(message, null), status, hostname, callerFuture, null);
-	}
-	
-	public ABSFutureTask(FutureTask<V> message, int status, String hostname, CompletableFuture<V> callerFuture, Supplier<Boolean> guard) {
-		f = callerFuture;
+	ABSFutureTask<V> continueWith(FutureTask<V> message, Guard guard) {
 		runningF = message;
 		this.enablingCondition = guard;
-		URI id = null;
-		try {
-			id = new URI("http", "future", hostname, this.hashCode(), null, null, null);   // TODO
-		} catch (URISyntaxException e) {
-			System.out.println("futureID is wrong");
-			e.printStackTrace();
-		}
-		futureID = id;
+		return this;
 	}
 		
+	@Override
 	public V get(){
 		try {
 			return f.get();
@@ -71,31 +58,36 @@ public class ABSFutureTask<V> implements Serializable {
 	}
 	
 	boolean evaluateGuard() {
-		return enablingCondition.get(); 
+		return enablingCondition == null || enablingCondition.evaluate();
 	}
 
 	@Override
-	public boolean equals(Object obj) {		// TODO
-		if (obj instanceof ABSFutureTask) {
-			ABSFutureTask<?> other = (ABSFutureTask<?>) obj;
-			return other.futureID.equals(futureID);
-		}
-		if (obj instanceof URI) {
-			URI fID = (URI) obj;
-			return fID.equals(futureID);
-
-		}
-		return super.equals(obj);
+	public void run() {
+		runningF.run();
 	}
 
 	@Override
-	public int hashCode() {
-		return futureID.hashCode();	// TODO
+	public boolean cancel(boolean mayInterruptIfRunning) {
+		// TODO never cancellable
+		return false;
+	}
+
+	@Override
+	public boolean isCancelled() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean isDone() {
+		// TODO Auto-generated method stub
+		return f.isDone();
+	}
+
+	@Override
+	public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+		throw new UnsupportedOperationException("will be implemented in future");
 	}
 	
-	@Override
-	public String toString() {
-		// TODO proper string representation
-		return futureID.toString();
-	}
+	// TODO implement equals, hashCode and toString when necessary
 }
