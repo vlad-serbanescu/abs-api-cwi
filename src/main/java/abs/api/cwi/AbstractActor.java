@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -76,12 +77,12 @@ public abstract class AbstractActor implements Comparable<AbstractActor>,Actor {
 
 	public static ConcurrentHashMap<URI, Future<?>> remoteUncompletedFutures = null;
 	
-	public static ConcurrentHashMap<ABSFuture<?>, Set<LocalActor>> lockedOnFutureActors = null;
+	public static ConcurrentHashMap<ABSFutureTask<?>, Set<LocalActor>> lockedOnFutureActors = null;
 	
 	//TODO use this map to notify Actors of a completed future and avoid looping through the entire map of actors
 
 	/** The main executor. */
-	// static ActorExecutor mainExecutor = null;
+	static ExecutorService mainExecutor = null;
 
 	/** The s. */
 
@@ -100,6 +101,10 @@ public abstract class AbstractActor implements Comparable<AbstractActor>,Actor {
 				System.err.println("could not get host");
 				e.printStackTrace();
 			}
+		}
+		
+		if(mainExecutor==null){
+			mainExecutor = Executors.newCachedThreadPool();
 		}
 	}
 
@@ -130,67 +135,67 @@ public abstract class AbstractActor implements Comparable<AbstractActor>,Actor {
 //	public abstract <T> T awaitRep(Supplier<Boolean> repCondition, Supplier<Boolean> s, Runnable before, Runnable after,
 //			Callable<T> end);
 
-	@Override
-	public <T> T await(URI futureID, Runnable message) {
-		if (remoteUncompletedFutures.containsKey(futureID))
-			return await(remoteUncompletedFutures.get(futureID), message);
-		CompletableFuture<T> toAwait = new CompletableFuture<T>();
-		remoteUncompletedFutures.put(futureID, toAwait);
-		return await(toAwait, message);
-	}
+//	@Override
+//	public <T> T await(URI futureID, Runnable message) {
+//		if (remoteUncompletedFutures.containsKey(futureID))
+//			return await(remoteUncompletedFutures.get(futureID), message);
+//		CompletableFuture<T> toAwait = new CompletableFuture<T>();
+//		remoteUncompletedFutures.put(futureID, toAwait);
+//		return await(toAwait, message);
+//	}
+//
+//	@Override
+//	public <T> T await(URI futureID, Callable<T> message) {
+//		if (remoteUncompletedFutures.containsKey(futureID))
+//			return await(remoteUncompletedFutures.get(futureID), message);
+//		CompletableFuture<T> toAwait = new CompletableFuture<T>();
+//		remoteUncompletedFutures.put(futureID, toAwait);
+//		return await(toAwait, message);
+//	}
+//
+//	@Override
+//	public <T> T get(URI futureID) {
+//		if (remoteUncompletedFutures.containsKey(futureID))
+//			try {
+//				return (T) remoteUncompletedFutures.get(futureID).get();
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//				return null;
+//			} catch (ExecutionException e) {
+//				e.printStackTrace();
+//				return null;
+//			}
+//		CompletableFuture<T> toGet = new CompletableFuture<T>();
+//		remoteUncompletedFutures.put(futureID, toGet);
+//		try {
+//			return (T) toGet.get();
+//		} catch (InterruptedException e) {
+//			e.printStackTrace();
+//			return null;
+//		} catch (ExecutionException e) {
+//			e.printStackTrace();
+//			return null;
+//		}
+//	}
 
-	@Override
-	public <T> T await(URI futureID, Callable<T> message) {
-		if (remoteUncompletedFutures.containsKey(futureID))
-			return await(remoteUncompletedFutures.get(futureID), message);
-		CompletableFuture<T> toAwait = new CompletableFuture<T>();
-		remoteUncompletedFutures.put(futureID, toAwait);
-		return await(toAwait, message);
-	}
-
-	@Override
-	public <T> T get(URI futureID) {
-		if (remoteUncompletedFutures.containsKey(futureID))
-			try {
-				return (T) remoteUncompletedFutures.get(futureID).get();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-				return null;
-			} catch (ExecutionException e) {
-				e.printStackTrace();
-				return null;
-			}
-		CompletableFuture<T> toGet = new CompletableFuture<T>();
-		remoteUncompletedFutures.put(futureID, toGet);
-		try {
-			return (T) toGet.get();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-			return null;
-		} catch (ExecutionException e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	public void releaseAll(ABSFuture<?> m) {
+	public void releaseAll(ABSFutureTask<?> m) {
 
 		if (actorMap != null)
 			for (ReachableActor actor : actorMap.values()) {
 				if (actor.futureContinuations != null)
 					if (actor.futureContinuations.containsKey(m.f)) {
-						Set<ABSFuture<?>> continuations = actor.futureContinuations.remove(m.f);
-						for (ABSFuture<?> continuation : continuations) {
+						Set<ABSFutureTask<?>> continuations = actor.futureContinuations.remove(m.f);
+						for (ABSFutureTask<?> continuation : continuations) {
 							actor.send(continuation);
 						}
 					}
 				if (actor.conditionContinuations != null)
 					for (Supplier<Boolean> condition : actor.conditionContinuations.keySet()) {
 						if (condition.get() == true) {
-							Set<ABSFuture<?>> continuations = actor.conditionContinuations.remove(condition);
-							Iterator<ABSFuture<?>> it = continuations.iterator();
+							Set<ABSFutureTask<?>> continuations = actor.conditionContinuations.remove(condition);
+							Iterator<ABSFutureTask<?>> it = continuations.iterator();
 							while(it.hasNext()){
-								ABSFuture<?> continuation = it.next();
+								ABSFutureTask<?> continuation = it.next();
 								actor.send(continuation);
 							}
 							
@@ -198,38 +203,40 @@ public abstract class AbstractActor implements Comparable<AbstractActor>,Actor {
 					}
 			}
 
-		/*if(lockedOnFutureActors!=null){
-			Set<LocalActor> freedActors = lockedOnFutureActors.get(m);
+		if(lockedOnFutureActors!=null){
+			//System.out.println(m);
+			//System.out.println(lockedOnFutureActors);
+			Set<LocalActor> freedActors = lockedOnFutureActors.remove(m);
 			if(freedActors!=null){
 				for (LocalActor localActor : freedActors) {
-					localActor.notifyLocked(m);
+					localActor.enable(m);
 				}
 			}
-		}*/
+		}
 
 		
-		if (localActorMap != null)
-			for (LocalActor actor : localActorMap) {
-				if (actor.futureContinuations != null)
-					if (actor.futureContinuations.containsKey(m.f)) {
-						Set<ABSFuture<?>> continuations = actor.futureContinuations.remove(m.f);
-						Iterator<ABSFuture<?>> it = continuations.iterator();
-						while(it.hasNext()){
-							ABSFuture<?> continuation = it.next();
-							actor.send(continuation);
-						}
-					}
-
-				if (actor.conditionContinuations != null)
-					for (Supplier<Boolean> condition : actor.conditionContinuations.keySet()) {
-						if (condition.get() == true) {
-							Set<ABSFuture<?>> continuations = actor.conditionContinuations.remove(condition);
-							for (ABSFuture<?> continuation : continuations) {
-								actor.send(continuation);
-							}
-						}
-					}
-			}
+//		if (localActorMap != null)
+//			for (LocalActor actor : localActorMap) {
+//				if (actor.futureContinuations != null)
+//					if (actor.futureContinuations.containsKey(m.f)) {
+//						Set<ABSFutureTask<?>> continuations = actor.futureContinuations.remove(m.f);
+//						Iterator<ABSFutureTask<?>> it = continuations.iterator();
+//						while(it.hasNext()){
+//							ABSFutureTask<?> continuation = it.next();
+//							actor.send(continuation);
+//						}
+//					}
+//
+//				if (actor.conditionContinuations != null)
+//					for (Supplier<Boolean> condition : actor.conditionContinuations.keySet()) {
+//						if (condition.get() == true) {
+//							Set<ABSFutureTask<?>> continuations = actor.conditionContinuations.remove(condition);
+//							for (ABSFutureTask<?> continuation : continuations) {
+//								actor.send(continuation);
+//							}
+//						}
+//					}
+//			}
 
 		if (remotePassedFutures != null) {
 			List<AbstractActor> actors = remotePassedFutures.get(m.futureID);
@@ -252,39 +259,40 @@ public abstract class AbstractActor implements Comparable<AbstractActor>,Actor {
 			}
 			remotePassedFutures.remove(m.futureID);
 		}
+		System.out.println("Finished releasing");
 	}
 
-	class ActorExecutor extends ThreadPoolExecutor {
-
-		public ActorExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit,
-				BlockingQueue<Runnable> workQueue) {
-			super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
-
-		}
-
-		@Override
-		protected void afterExecute(Runnable r, Throwable t) {
-			super.afterExecute(r, t);
-			if (t == null && r instanceof Future<?>) {
-				try {
-					Future<?> future = (Future<?>) r;
-					if (future.isDone()) {
-						future.get();
-					}
-				} catch (CancellationException ce) {
-					t = ce;
-				} catch (ExecutionException ee) {
-					t = ee.getCause();
-				} catch (InterruptedException ie) {
-					Thread.currentThread().interrupt(); // ignore/reset
-				}
-			}
-			if (t != null) {
-				System.out.println(t);
-			}
-		}
-
-	}
+//	class ActorExecutor extends ThreadPoolExecutor {
+//
+//		public ActorExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit,
+//				BlockingQueue<Runnable> workQueue) {
+//			super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
+//
+//		}
+//
+//		@Override
+//		protected void afterExecute(Runnable r, Throwable t) {
+//			super.afterExecute(r, t);
+//			if (t == null && r instanceof Future<?>) {
+//				try {
+//					Future<?> future = (Future<?>) r;
+//					if (future.isDone()) {
+//						future.get();
+//					}
+//				} catch (CancellationException ce) {
+//					t = ce;
+//				} catch (ExecutionException ee) {
+//					t = ee.getCause();
+//				} catch (InterruptedException ie) {
+//					Thread.currentThread().interrupt(); // ignore/reset
+//				}
+//			}
+//			if (t != null) {
+//				System.out.println(t);
+//			}
+//		}
+//
+//	}
 
 	public int compareTo(AbstractActor o) {
 		return this.hashCode() - o.hashCode();

@@ -27,10 +27,10 @@ public class ReachableActor extends AbstractActor {
 	/** The name. A URI describing the location */
 	private URI name;
 
-	protected ConcurrentHashMap<Future<?>, Set<ABSFuture<?>>> futureContinuations;
-	protected ConcurrentHashMap<Supplier<Boolean>, Set<ABSFuture<?>>> conditionContinuations;
+	protected ConcurrentHashMap<Future<?>, Set<ABSFutureTask<?>>> futureContinuations;
+	protected ConcurrentHashMap<Supplier<Boolean>, Set<ABSFutureTask<?>>> conditionContinuations;
 
-	protected ABSFuture<?> possibleAwait = null;
+	protected ABSFutureTask<?> possibleAwait = null;
 
 	protected boolean completedMessage = true;
 
@@ -40,7 +40,7 @@ public class ReachableActor extends AbstractActor {
 	/**
 	 * The message queue. This field only exists if the actor is on this machine
 	 */
-	protected ConcurrentLinkedQueue<ABSFuture<?>> messageQueue = null;
+	protected ConcurrentLinkedQueue<ABSFutureTask<?>> messageQueue = null;
 
 	/**
 	 * Instantiates a new reachable actor.
@@ -58,7 +58,7 @@ public class ReachableActor extends AbstractActor {
 			status = IS_REMOTE;
 
 		if (status == IS_REACHABLE) {
-			messageQueue = new ConcurrentLinkedQueue<ABSFuture<?>>();
+			messageQueue = new ConcurrentLinkedQueue<ABSFutureTask<?>>();
 
 			if (actorMap == null) {
 				actorMap = new ConcurrentHashMap<URI, ReachableActor>();
@@ -81,7 +81,7 @@ public class ReachableActor extends AbstractActor {
 
 	}
 
-	protected <V> ABSFuture<V> send(ABSFuture<V> m) {
+	protected <V> ABSFutureTask<V> send(ABSFutureTask<V> m) {
 
 		if (this.status == IS_REACHABLE) {
 			messageQueue.add(m);
@@ -90,7 +90,7 @@ public class ReachableActor extends AbstractActor {
 
 					public void run() {
 						while (messageQueue.isEmpty() == false) {
-							ABSFuture<?> m;
+							ABSFutureTask<?> m;
 							m = messageQueue.poll();
 							m.runningF.run();
 							if (!completedMessage) {
@@ -169,43 +169,43 @@ public class ReachableActor extends AbstractActor {
 	 */
 
 	@Override
-	public <V> ABSFuture<V> send(Runnable message) {
-		ABSFuture<V> m = new ABSFuture<V>(message, status, name.getHost());
+	public <V> ABSFutureTask<V> send(Runnable message) {
+		ABSFutureTask<V> m = new ABSFutureTask<V>(message, status, name.getHost());
 		return send(m);
 	}
 
 	@Override
-	public <V> ABSFuture<V> send(Callable<V> message) {
-		ABSFuture<V> m = new ABSFuture<V>(message, status, name.getHost());
+	public <V> ABSFutureTask<V> send(Callable<V> message) {
+		ABSFutureTask<V> m = new ABSFutureTask<V>(message, status, name.getHost());
 		return send(m);
 	}
 
 	
-	@Override
-	public <T> T await(Supplier<Boolean> s, Callable<T> message) {
-		ABSFuture<T> m = new ABSFuture<T>(message, status, this.name.getHost());
-		return await(s, m);
-	}
+//	@Override
+//	public <T> T await(Supplier<Boolean> s, Callable<T> message) {
+//		ABSFutureTask<T> m = new ABSFutureTask<T>(message, status, this.name.getHost());
+//		return await(s, m);
+//	}
+//
+//	@Override
+//	public <T> T await(Future<?> s, Callable<T> message) {
+//		ABSFutureTask<T> m = new ABSFutureTask<T>(message, status, this.name.getHost());
+//		return await(s, m);
+//	}
+//
+//	@Override
+//	public <T> T await(Supplier<Boolean> s, Runnable message) {
+//		ABSFutureTask<T> m = new ABSFutureTask<T>(message, status, this.name.getHost());
+//		return await(s, m);
+//	}
+//
+//	@Override
+//	public <T> T await(Future<?> s, Runnable message) {
+//		ABSFutureTask<T> m = new ABSFutureTask<T>(message, status, this.name.getHost());
+//		return await(s, m);
+//	}
 
-	@Override
-	public <T> T await(Future<?> s, Callable<T> message) {
-		ABSFuture<T> m = new ABSFuture<T>(message, status, this.name.getHost());
-		return await(s, m);
-	}
-
-	@Override
-	public <T> T await(Supplier<Boolean> s, Runnable message) {
-		ABSFuture<T> m = new ABSFuture<T>(message, status, this.name.getHost());
-		return await(s, m);
-	}
-
-	@Override
-	public <T> T await(Future<?> s, Runnable message) {
-		ABSFuture<T> m = new ABSFuture<T>(message, status, this.name.getHost());
-		return await(s, m);
-	}
-
-	private <T> T await(Supplier<Boolean> s, ABSFuture<T> m) {
+	private <T> T await(Supplier<Boolean> s, ABSFutureTask<T> m) {
 		if (s.get() == true) {
 			m.runningF.run();
 			try {
@@ -219,12 +219,12 @@ public class ReachableActor extends AbstractActor {
 			}
 		} else {
 			if (conditionContinuations == null)
-				conditionContinuations = new ConcurrentHashMap<Supplier<Boolean>, Set<ABSFuture<?>>>();
+				conditionContinuations = new ConcurrentHashMap<Supplier<Boolean>, Set<ABSFutureTask<?>>>();
 
 			if (conditionContinuations.containsKey(s))
 				conditionContinuations.get(s).add(m);
 			else {
-				Set<ABSFuture<?>> continuations = new HashSet<ABSFuture<?>>();
+				Set<ABSFutureTask<?>> continuations = new HashSet<ABSFutureTask<?>>();
 				continuations.add(m);
 				conditionContinuations.put(s, continuations);
 			}
@@ -234,7 +234,7 @@ public class ReachableActor extends AbstractActor {
 		}
 	}
 
-	private <T> T await(Future<?> s, ABSFuture<T> m) {
+	private <T> T await(Future<?> s, ABSFutureTask<T> m) {
 		if (s.isDone()) {
 			System.out.println("entering await completion");
 			m.runningF.run();
@@ -250,13 +250,13 @@ public class ReachableActor extends AbstractActor {
 			}
 		} else {
 			if (futureContinuations == null) {
-				futureContinuations = new ConcurrentHashMap<Future<?>, Set<ABSFuture<?>>>();
+				futureContinuations = new ConcurrentHashMap<Future<?>, Set<ABSFutureTask<?>>>();
 			}
 
 			if (futureContinuations.containsKey(s))
 				futureContinuations.get(s).add(m);
 			else {
-				Set<ABSFuture<?>> continuations = new HashSet<ABSFuture<?>>();
+				Set<ABSFutureTask<?>> continuations = new HashSet<ABSFutureTask<?>>();
 				continuations.add(m);
 				futureContinuations.put(s, continuations);
 			}
@@ -266,65 +266,65 @@ public class ReachableActor extends AbstractActor {
 		}
 	}
 	
-	@Override
-	public <T> T awaitRep(Supplier<Boolean> repCondition, Runnable before, Runnable after,
-			Callable<T> end,Supplier<Future<?>> s) {
-		if (s.get().isDone()) {
-			if (repCondition.get() == true) {
-				before.run();
-				after.run();
-				return awaitRep(repCondition,before, after, end,s);
-			} else {
-				try {
-					return end.call();
-				} catch (Exception e) {
-					e.printStackTrace();
-					return null;
-				}
-			}
-
-		} else {
-			Callable<T> loopContinuation = (Callable<T>) (() -> {
-				after.run();
-				if (repCondition.get() == true)
-					return awaitRep(repCondition, before, after, end,s);
-				else
-					return end.call();
-			});
-			before.run();
-			return await(s.get(), loopContinuation);
-		}
-	}
-
-	@Override
-	public <T> T awaitRep(Supplier<Boolean> repCondition, Supplier<Boolean> s, Runnable beforeAwait, Runnable afterAwait,
-			Callable<T> end) {
-		if (s.get() == true) {
-			if (repCondition.get() == true) {
-				beforeAwait.run();
-				afterAwait.run();
-				return awaitRep(repCondition, s, beforeAwait, afterAwait, end);
-			} else {
-				try {
-					return end.call();
-				} catch (Exception e) {
-					e.printStackTrace();
-					return null;
-				}
-			}
-
-		} else {
-			Callable<T> loopContinuation = (Callable<T>) (() -> {
-				afterAwait.run();
-				if (repCondition.get() == true)
-					return awaitRep(repCondition, s, beforeAwait, afterAwait, end);
-				else
-					return end.call();
-			});
-			beforeAwait.run();
-			return await(s, loopContinuation);
-		}
-	}
+//	@Override
+//	public <T> T awaitRep(Supplier<Boolean> repCondition, Runnable before, Runnable after,
+//			Callable<T> end,Supplier<Future<?>> s) {
+//		if (s.get().isDone()) {
+//			if (repCondition.get() == true) {
+//				before.run();
+//				after.run();
+//				return awaitRep(repCondition,before, after, end,s);
+//			} else {
+//				try {
+//					return end.call();
+//				} catch (Exception e) {
+//					e.printStackTrace();
+//					return null;
+//				}
+//			}
+//
+//		} else {
+//			Callable<T> loopContinuation = (Callable<T>) (() -> {
+//				after.run();
+//				if (repCondition.get() == true)
+//					return awaitRep(repCondition, before, after, end,s);
+//				else
+//					return end.call();
+//			});
+//			before.run();
+//			return await(s.get(), loopContinuation);
+//		}
+//	}
+//
+//	@Override
+//	public <T> T awaitRep(Supplier<Boolean> repCondition, Supplier<Boolean> s, Runnable beforeAwait, Runnable afterAwait,
+//			Callable<T> end) {
+//		if (s.get() == true) {
+//			if (repCondition.get() == true) {
+//				beforeAwait.run();
+//				afterAwait.run();
+//				return awaitRep(repCondition, s, beforeAwait, afterAwait, end);
+//			} else {
+//				try {
+//					return end.call();
+//				} catch (Exception e) {
+//					e.printStackTrace();
+//					return null;
+//				}
+//			}
+//
+//		} else {
+//			Callable<T> loopContinuation = (Callable<T>) (() -> {
+//				afterAwait.run();
+//				if (repCondition.get() == true)
+//					return awaitRep(repCondition, s, beforeAwait, afterAwait, end);
+//				else
+//					return end.call();
+//			});
+//			beforeAwait.run();
+//			return await(s, loopContinuation);
+//		}
+//	}
 
 	/*
 	 * (non-Javadoc)
@@ -349,5 +349,17 @@ public class ReachableActor extends AbstractActor {
 	@Override
 	public int hashCode() {
 		return name.hashCode();
+	}
+
+	@Override
+	public <T> void await(Guard guard, Callable<T> message) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public <T> void await(Guard guard, Runnable message) {
+		// TODO Auto-generated method stub
+		
 	}
 }
