@@ -65,6 +65,7 @@ private static ConcurrentHashMap<ABSFutureTask<?>, Set<Actor>> lockedOnFutureAct
 	
 	public static void releaseAll(ABSFutureTask<?> m) {
 		Set<Actor> freedActors = lockedOnFutureActors.remove(m);
+		System.out.println(freedActors);
 		if(freedActors != null){
 			for (Actor localActor : freedActors) {
 				localActor.send((Runnable)()->{});	// just awaken the actor if it has no running task at the moment

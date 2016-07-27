@@ -1,8 +1,5 @@
 package abs.api.cwi;
 
-import java.util.LinkedList;
-import java.util.concurrent.ConcurrentHashMap;
-
 public class ConjunctionGuard extends Guard {
 	private Guard left, right;
 
