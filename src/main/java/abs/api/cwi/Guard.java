@@ -13,6 +13,8 @@ public abstract class Guard {
 			return new PureExpressionGuard((Supplier<Boolean>)o);
 		} else if (o instanceof ABSFutureTask) {
 			return new FutureGuard((ABSFutureTask)o);
+		} else if (o instanceof Guard) {
+			return (Guard) o;
 		} else
 			throw new IllegalArgumentException("Cannot make a guard.");
 	}
