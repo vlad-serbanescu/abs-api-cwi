@@ -20,12 +20,9 @@ public class LocalActor implements Comparable<Actor>, Actor {
 			try {
 				System.out.println("before running: "+runningMessage);
 				runningMessage.run();
-				System.out.println("after running: "+runningMessage);
-				runningMessage.finished();
 				DeploymentComponent.releaseAll(runningMessage);
 			} catch (AwaitException ae) {
 				System.out.println("awaiting inside: "+runningMessage);
-				System.out.println("await with unresolved guard encountered");
 			}
 			// in case there are more actors than threads, give other actors a chance to run
 			DeploymentComponent.submit(this);
@@ -53,8 +50,8 @@ public class LocalActor implements Comparable<Actor>, Actor {
 	}
 
 	@Override
-	public final <V> ABSFutureTask<V> send(Runnable message) {
-		ABSFutureTask<V> m = new ABSFutureTask<V>(message);
+	public final ABSFutureTask<Void> send(Runnable message) {
+		ABSFutureTask<Void> m = new ABSFutureTask<>(message);
 		send(m);
 		return m;
 	}
@@ -77,12 +74,12 @@ public class LocalActor implements Comparable<Actor>, Actor {
 
 	@Override
 	public final void await(Guard guard, Callable message) {
-		await(runningMessage.continueWith(new FutureTask<>(message), guard));
+		await(runningMessage.continueWith(message, guard));
 	}
 
 	@Override
 	public final void await(Guard guard, Runnable message) {
-		await(runningMessage.continueWith(new FutureTask<>(message, null), guard));
+		await(runningMessage.continueWith(message, guard));
 	}
 
 	private <T> void await(ABSFutureTask<T> m) {

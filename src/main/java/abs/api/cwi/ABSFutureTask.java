@@ -6,6 +6,7 @@ import java.net.URISyntaxException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -13,23 +14,29 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
 public class ABSFutureTask<V> implements Serializable, Future<V>, Runnable {
-
 	protected Guard enablingCondition = null;
 	protected final CompletableFuture<V> f;
-	protected FutureTask<V> runningF = null;
+	protected Callable<V> task;
 
+	@SuppressWarnings("unchecked")
 	ABSFutureTask(Runnable message) {
-		runningF = new FutureTask<>(message, null);
-		f = new CompletableFuture<V>();
+		this((Callable<V>) Executors.callable(message));
 	}
 
 	ABSFutureTask(Callable<V> message) {
-		runningF = new FutureTask<>(message);
+		if (message == null)
+			throw new NullPointerException();
+		this.task = message;
 		f = new CompletableFuture<V>();
 	}
 	
-	ABSFutureTask<V> continueWith(FutureTask<V> message, Guard guard) {
-		runningF = message;
+	@SuppressWarnings("unchecked")
+	ABSFutureTask<V> continueWith(Runnable continuation, Guard guard) {
+		return continueWith((Callable<V>) Executors.callable(continuation), guard);
+	}
+	
+	ABSFutureTask<V> continueWith(Callable<V> continuation, Guard guard) {
+		this.task = continuation;
 		this.enablingCondition = guard;
 		return this;
 	}
@@ -43,17 +50,7 @@ public class ABSFutureTask<V> implements Serializable, Future<V>, Runnable {
 			return null;
 		} catch (ExecutionException e) {
 			e.printStackTrace();
-			return null;
-		}
-	}
-
-	void finished() {
-		try {
-			this.f.complete(runningF.get());
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			e.printStackTrace();
+			return null;	// TODO re-throw? 
 		}
 	}
 	
@@ -62,8 +59,14 @@ public class ABSFutureTask<V> implements Serializable, Future<V>, Runnable {
 	}
 
 	@Override
-	public void run() {
-		runningF.run();
+	public void run(){
+		try {
+			f.complete(task.call());
+		} catch (RuntimeException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override

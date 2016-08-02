@@ -3,7 +3,7 @@ package abs.api.cwi;
 import java.util.concurrent.Callable;
 
 public interface Actor {
-	public <V> ABSFutureTask<V> send(Runnable message);
+	public ABSFutureTask<Void> send(Runnable message);
 
 	public <V> ABSFutureTask<V> send(Callable<V> message);
 

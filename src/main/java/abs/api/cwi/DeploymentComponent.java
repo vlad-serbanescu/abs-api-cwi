@@ -50,38 +50,51 @@ import javax.net.ServerSocketFactory;
 /**
  * The Class ABSActor.
  */
-public class DeploymentComponent  {
-	
-private static ConcurrentHashMap<ABSFutureTask<?>, Set<Actor>> lockedOnFutureActors = new ConcurrentHashMap<>();
-	
+public class DeploymentComponent {
+	private static ConcurrentHashMap<ABSFutureTask<?>, Set<Actor>> lockedOnFutureActors = new ConcurrentHashMap<>();
+
 	/** The main executor. */
-	private static ExecutorService mainExecutor = Executors.newCachedThreadPool();;
-	
-	private DeploymentComponent() { }
-	
+	private static ExecutorService mainExecutor = Executors
+			.newCachedThreadPool();;
+
+	private DeploymentComponent() {
+	}
+
 	public static void submit(Runnable task) {
 		mainExecutor.submit(task);
 	}
-	
+
 	public static void releaseAll(ABSFutureTask<?> m) {
 		Set<Actor> freedActors = lockedOnFutureActors.remove(m);
 		System.out.println(freedActors);
-		if(freedActors != null){
+		if (freedActors != null) {
 			for (Actor localActor : freedActors) {
-				localActor.send((Runnable)()->{});	// just awaken the actor if it has no running task at the moment
+				localActor.send((Runnable) () -> {
+				}); // just awaken the actor if it has no running task at the
+					// moment
 			}
 		}
 		System.out.println("Finished releasing");
 	}
 
 	public static void lockActorOnFuture(Actor a, ABSFutureTask<?> future) {
-		if(lockedOnFutureActors.containsKey(future)){
+		if (lockedOnFutureActors.containsKey(future)) {
 			lockedOnFutureActors.get(future).add(a);
-		}
-		else{
+		} else {
 			Set<Actor> dependingActors = new HashSet<>();
 			dependingActors.add(a);
 			lockedOnFutureActors.put(future, dependingActors);
-		}		
+		}
+	}
+
+	public static void shutdown() {
+		mainExecutor.shutdown();
+		try {
+			while (!mainExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+			}
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }
