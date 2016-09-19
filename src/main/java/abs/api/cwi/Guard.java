@@ -8,7 +8,7 @@ import java.util.function.Supplier;
 public abstract class Guard {
 	abstract boolean evaluate();
 	abstract void addFuture(Actor a);
-	static protected Guard convert(Object o) {
+	static public Guard convert(Object o) {
 		if (o instanceof Supplier) {
 			return new PureExpressionGuard((Supplier<Boolean>)o);
 		} else if (o instanceof ABSFutureTask) {

@@ -286,7 +286,7 @@ public static <E> E get(List<E> list, int index) {
  * Returns element 'n' of list 'list'.
  */
 
-public static <E> E without(List<E> list, Integer index) {
+public static <E> E nth(List<E> list, Integer index) {
 	  return list.get(index);
 	}
 
