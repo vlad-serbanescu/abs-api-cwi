@@ -578,6 +578,8 @@ public static String toString(Object o) {
 public static String concatenate(String s1, String s2) {
   return new StringBuilder().append(s1).append(s2).toString();
 }
+
+
 //
 // --- I/O
 

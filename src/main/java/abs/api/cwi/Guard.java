@@ -15,7 +15,9 @@ public abstract class Guard {
 			return new FutureGuard((ABSFutureTask)o);
 		} else if (o instanceof Guard) {
 			return (Guard) o;
-		} else
+		} else{
+			System.out.println("Cannot make guard");
 			throw new IllegalArgumentException("Cannot make a guard.");
+		}
 	}
 }

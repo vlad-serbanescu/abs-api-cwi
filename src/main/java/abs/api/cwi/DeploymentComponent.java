@@ -65,7 +65,6 @@ public class DeploymentComponent {
 
 	public static void releaseAll(ABSFutureTask<?> m) {
 		Set<Actor> freedActors = lockedOnFutureActors.remove(m);
-		//System.out.println(freedActors);
 		if (freedActors != null) {
 			for (Actor localActor : freedActors) {
 				localActor.send((Runnable) () -> {
@@ -73,7 +72,7 @@ public class DeploymentComponent {
 					// moment
 			}
 		}
-		//System.out.println("Finished releasing");
+		// System.out.println("Finished releasing");
 	}
 
 	public static void lockActorOnFuture(Actor a, ABSFutureTask<?> future) {

@@ -15,8 +15,7 @@ public class LocalActor implements Comparable<Actor>, Actor {
 	class MainTask implements Runnable {
 		@Override
 		public void run() {
-			// System.out.println(LocalActor.this+" from main task:" +
-			// messageQueue);
+			//System.out.println(LocalActor.this + " from main task:" + messageQueue);
 			if (!takeOrDie())
 				return; // no enabled message or empty queue
 			try {
@@ -24,7 +23,7 @@ public class LocalActor implements Comparable<Actor>, Actor {
 				runningMessage.run();
 				DeploymentComponent.releaseAll(runningMessage);
 			} catch (AwaitException ae) {
-				// System.out.println("awaiting inside: "+runningMessage);
+				// System.out.println("awaiting inside: "+messageQueue);
 			}
 			// in case there are more actors than threads, give other actors a
 			// chance to run
@@ -69,7 +68,6 @@ public class LocalActor implements Comparable<Actor>, Actor {
 
 	private <V> void send(ABSFutureTask<V> messageArgument) {
 		messageQueue.add(messageArgument);
-		// System.out.println(this+ " queue: "+ messageQueue);
 		if (notRunningThenStart()) {
 			DeploymentComponent.submit(new MainTask());
 		}
@@ -89,7 +87,6 @@ public class LocalActor implements Comparable<Actor>, Actor {
 		if (!m.evaluateGuard()) {
 			m.enablingCondition.addFuture(this);
 			messageQueue.add(m);
-			// System.out.println("Await-- "+this+ " queue: "+ messageQueue);
 			throw new AwaitException();
 		}
 	}
