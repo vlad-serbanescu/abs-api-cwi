@@ -538,7 +538,7 @@ public static <K, V> Map<K, V> removeKey(Map<K, V> map, K key) {
 }
 
 public static <K, V, C extends Collection<K>> C keys(Map<K, V> map) {
-  return (C) map.keySet();
+  return (C) new HashSet<>(map.keySet());
 }
 
 public static <K, V> Collection<V> values(Map<K, V> map) {
