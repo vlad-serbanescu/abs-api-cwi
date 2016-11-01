@@ -11,15 +11,25 @@ public class LocalActor implements Comparable<Actor>, Actor {
 	public ABSFutureTask<?> runningMessage;
 	private AtomicBoolean executorIsRunning = new AtomicBoolean(false);
 	protected ConcurrentLinkedQueue<ABSFutureTask<?>> messageQueue = new ConcurrentLinkedQueue<ABSFutureTask<?>>();
+	protected int syncCallContext = 0; // TODO : might need to be atomic
+	protected int counter = 0; // TODO : might need to be atomic
 
 	class MainTask implements Runnable {
 		@Override
 		public void run() {
-			//System.out.println(LocalActor.this + " from main task:" + messageQueue);
+			// System.out.println(LocalActor.this + " from main task:" +
+			// messageQueue);
 			if (!takeOrDie())
 				return; // no enabled message or empty queue
 			try {
 				// System.out.println("before running: "+runningMessage);
+				if (runningMessage.isSyncCall())
+					syncCallContext = runningMessage.syncCallCounter;
+				if (runningMessage.syncChainInitiator){
+					syncCallContext = 0;  // exit the sync call chain context
+					runningMessage.syncChainInitiator = false;
+					runningMessage.syncCallCounter = 0;
+				}
 				runningMessage.run();
 				DeploymentComponent.releaseAll(runningMessage);
 			} catch (AwaitException ae) {
@@ -34,7 +44,8 @@ public class LocalActor implements Comparable<Actor>, Actor {
 	private boolean takeOrDie() {
 		synchronized (executorIsRunning) {
 			for (ABSFutureTask<?> absFutureTask : messageQueue) {
-				if (absFutureTask.evaluateGuard()) {
+				if ((syncCallContext == 0 || syncCallContext == absFutureTask.syncCallCounter)
+						&& absFutureTask.evaluateGuard()) {
 					runningMessage = absFutureTask;
 					messageQueue.remove(absFutureTask);
 					return true;
@@ -49,6 +60,49 @@ public class LocalActor implements Comparable<Actor>, Actor {
 		synchronized (executorIsRunning) {
 			return executorIsRunning.compareAndSet(false, true);
 		}
+	}
+
+	private int newCounter() {
+		if (syncCallContext == 0) {
+			syncCallContext = ++counter;
+			runningMessage.syncChainInitiator = true;
+		}
+		runningMessage.syncCallCounter = syncCallContext;
+		return syncCallContext;
+	}
+
+	@Override
+	public ABSFutureTask<Void> sendSync(Runnable message, NotRunnable continuation) {
+		ABSFutureTask<Void> m = new ABSFutureTask<>(message, newCounter());
+		send(m);
+		Callable continuation2 = ()->continuation.run(m);
+		await(runningMessage.continueWith(continuation2, Guard.convert(m)));
+		return m;
+	}
+
+	@Override
+	public <V> ABSFutureTask<V> sendSync(Callable<V> message, NotRunnable continuation) {
+		ABSFutureTask<V> m = new ABSFutureTask<V>(message, newCounter());
+		send(m);
+		Callable continuation2 = ()->continuation.run(m);
+		await(runningMessage.continueWith(continuation2, Guard.convert(m)));
+		return m;
+	}
+
+	@Override
+	public ABSFutureTask<Void> sendSync(Runnable message, Runnable continuation) {
+		ABSFutureTask<Void> m = new ABSFutureTask<>(message, newCounter());
+		send(m);
+		await(runningMessage.continueWith(continuation, Guard.convert(m)));
+		return m;
+	}
+
+	@Override
+	public <V> ABSFutureTask<V> sendSync(Callable<V> message, Runnable continuation) {
+		ABSFutureTask<V> m = new ABSFutureTask<V>(message, newCounter());
+		send(m);
+		await(runningMessage.continueWith(continuation, Guard.convert(m)));
+		return m;
 	}
 
 	@Override
@@ -73,14 +127,24 @@ public class LocalActor implements Comparable<Actor>, Actor {
 		}
 	}
 
+	/**
+	 * This is called only from outside, and is therefore for async calls. So it resets the sync-call-context
+	 * if AwaitException is thrown. Otherwise, it keeps the sync-call-context value.
+	 */
 	@Override
 	public final void await(Guard guard, Callable message) {
+		int context = this.syncCallContext;
+		this.syncCallContext = 0;
 		await(runningMessage.continueWith(message, guard));
+		this.syncCallContext = context;
 	}
 
 	@Override
 	public final void await(Guard guard, Runnable message) {
+		int context = this.syncCallContext;
+		this.syncCallContext = 0;
 		await(runningMessage.continueWith(message, guard));
+		this.syncCallContext = context;
 	}
 
 	private <T> void await(ABSFutureTask<T> m) {
@@ -99,4 +163,5 @@ public class LocalActor implements Comparable<Actor>, Actor {
 		// TODO check
 		return this.hashCode() - o.hashCode();
 	}
+
 }

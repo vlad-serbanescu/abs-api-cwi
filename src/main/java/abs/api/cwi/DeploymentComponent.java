@@ -67,7 +67,7 @@ public class DeploymentComponent {
 		Set<Actor> freedActors = lockedOnFutureActors.remove(m);
 		if (freedActors != null) {
 			for (Actor localActor : freedActors) {
-				localActor.send((Runnable) () -> {
+				localActor.send((Runnable) () -> { 
 				}); // just awaken the actor if it has no running task at the
 					// moment
 			}

@@ -20,12 +20,5 @@ public class DisjunctionGuard extends Guard {
 		right.addFuture(a);	
 	}
 
-	public static Guard or(Object... guards){
-		if (guards.length == 0) return null;
-		Guard g = Guard.convert(guards[0]);
-		for (int i=1; i<guards.length; i++) {
-			g = new DisjunctionGuard(g, Guard.convert(guards[i]));
-		}		
-		return g;
-	}
+	
 }
