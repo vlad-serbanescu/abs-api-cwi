@@ -54,7 +54,7 @@ public class DeploymentComponent {
 	private static ConcurrentHashMap<ABSFutureTask<?>, Set<Actor>> lockedOnFutureActors = new ConcurrentHashMap<>();
 
 	/** The main executor. */
-	private static ExecutorService mainExecutor = Executors.newFixedThreadPool(8);
+	private static ExecutorService mainExecutor = Executors.newFixedThreadPool(4);
 
 	private DeploymentComponent() {
 	}

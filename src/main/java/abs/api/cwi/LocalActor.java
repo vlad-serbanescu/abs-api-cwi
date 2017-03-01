@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class LocalActor implements Comparable<Actor>, Actor {
 
 	public ABSFutureTask<?> runningMessage;
-	private AtomicBoolean executorIsRunning = new AtomicBoolean(false);
+	private AtomicBoolean mainTaskIsRunning = new AtomicBoolean(false);
 	protected ConcurrentLinkedQueue<ABSFutureTask<?>> messageQueue = new ConcurrentLinkedQueue<ABSFutureTask<?>>();
 	protected int syncCallContext = 0; // TODO : might need to be atomic
 	protected int counter = 0; // TODO : might need to be atomic
@@ -42,7 +42,7 @@ public class LocalActor implements Comparable<Actor>, Actor {
 	}
 
 	private boolean takeOrDie() {
-		synchronized (executorIsRunning) {
+		synchronized (mainTaskIsRunning) {
 			for (ABSFutureTask<?> absFutureTask : messageQueue) {
 				if ((syncCallContext == 0 || syncCallContext == absFutureTask.syncCallCounter)
 						&& absFutureTask.evaluateGuard()) {
@@ -51,14 +51,14 @@ public class LocalActor implements Comparable<Actor>, Actor {
 					return true;
 				}
 			}
-			executorIsRunning.set(false);
+			mainTaskIsRunning.set(false);
 			return false;
 		}
 	}
 
 	private boolean notRunningThenStart() {
-		synchronized (executorIsRunning) {
-			return executorIsRunning.compareAndSet(false, true);
+		synchronized (mainTaskIsRunning) {
+			return mainTaskIsRunning.compareAndSet(false, true);
 		}
 	}
 

@@ -1,6 +1,6 @@
 package abs.api.cwi;
 
 @FunctionalInterface
-public interface NotRunnable<T> {
-	T run(ABSFutureTask future);
+public interface NotRunnable<T, V> {
+	T run(ABSFutureTask<V> future);
 }
