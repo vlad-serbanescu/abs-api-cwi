@@ -25,8 +25,8 @@ public class LocalActor implements Comparable<Actor>, Actor {
 				// System.out.println("before running: "+runningMessage);
 				if (runningMessage.isSyncCall())
 					syncCallContext = runningMessage.syncCallCounter;
-				if (runningMessage.syncChainInitiator){
-					syncCallContext = 0;  // exit the sync call chain context
+				if (runningMessage.syncChainInitiator) {
+					syncCallContext = 0; // exit the sync call chain context
 					runningMessage.syncChainInitiator = false;
 					runningMessage.syncCallCounter = 0;
 				}
@@ -72,37 +72,45 @@ public class LocalActor implements Comparable<Actor>, Actor {
 	}
 
 	@Override
-	public ABSFutureTask<Void> sendSync(Runnable message, NotRunnable continuation) {
-		ABSFutureTask<Void> m = new ABSFutureTask<>(message, newCounter());
+	public <V> ABSFutureTask<V> sendSync(Callable<V> message, RunnablewFut continuation) {
+		ABSFutureTask<V> m = new ABSFutureTask<V>(message, newCounter());
 		send(m);
-		Callable continuation2 = ()->continuation.run(m);
+		Runnable continuation2 = () -> continuation.run(m);
 		await(runningMessage.continueWith(continuation2, Guard.convert(m)));
 		return m;
 	}
 
 	@Override
-	public <V> ABSFutureTask<V> sendSync(Callable<V> message, NotRunnable continuation) {
+	public <V> ABSFutureTask<V> sendSync(CallablewFut continuation, Callable<V> message) {
 		ABSFutureTask<V> m = new ABSFutureTask<V>(message, newCounter());
 		send(m);
-		Callable continuation2 = ()->continuation.run(m);
+		Callable continuation2 = () -> continuation.run(m);
 		await(runningMessage.continueWith(continuation2, Guard.convert(m)));
 		return m;
 	}
 
 	@Override
-	public ABSFutureTask<Void> sendSync(Runnable message, Runnable continuation) {
+	public void sendSync(Runnable message, Runnable continuation) {
 		ABSFutureTask<Void> m = new ABSFutureTask<>(message, newCounter());
 		send(m);
 		await(runningMessage.continueWith(continuation, Guard.convert(m)));
-		return m;
+		// return m;
 	}
 
+	// @Override
+	// public <V> void sendSync(Callable<V> message, RunnablewF continuation) {
+	// ABSFutureTask<V> m = new ABSFutureTask<V>(message, newCounter());
+	// send(m);
+	// await(runningMessage.continueWith(continuation, Guard.convert(m)));
+	// //return m;
+	// }
+	//
 	@Override
-	public <V> ABSFutureTask<V> sendSync(Callable<V> message, Runnable continuation) {
-		ABSFutureTask<V> m = new ABSFutureTask<V>(message, newCounter());
+	public void sendSync(Runnable message, Callable continuation) {
+		ABSFutureTask<Void> m = new ABSFutureTask<>(message, newCounter());
 		send(m);
 		await(runningMessage.continueWith(continuation, Guard.convert(m)));
-		return m;
+
 	}
 
 	@Override
@@ -128,11 +136,12 @@ public class LocalActor implements Comparable<Actor>, Actor {
 	}
 
 	/**
-	 * This is called only from outside, and is therefore for async calls. So it resets the sync-call-context
-	 * if AwaitException is thrown. Otherwise, it keeps the sync-call-context value.
+	 * This is called only from outside, and is therefore for async calls. So it
+	 * resets the sync-call-context if AwaitException is thrown. Otherwise, it
+	 * keeps the sync-call-context value.
 	 */
 	@Override
-	public final void await(Guard guard, Callable message) {
+	public final void await(Callable message, Guard guard) {
 		int context = this.syncCallContext;
 		this.syncCallContext = 0;
 		await(runningMessage.continueWith(message, guard));
