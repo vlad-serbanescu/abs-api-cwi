@@ -19,6 +19,11 @@ public class ConjunctionGuard extends Guard {
 		left.addFuture(a);
 		right.addFuture(a);
 	}
+
+	@Override
+	boolean hasFuture() {
+		return left.hasFuture()||right.hasFuture();
+	}
 	
 	
 }

@@ -19,4 +19,9 @@ public class PureExpressionGuard extends Guard {
 	@Override
 	void addFuture(Actor a) { }
 
+	@Override
+	boolean hasFuture() {
+		return false;
+	}
+
 }

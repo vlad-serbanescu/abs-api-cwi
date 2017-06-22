@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 
 public abstract class Guard {
 	abstract boolean evaluate();
+	abstract boolean hasFuture();
 
 	abstract void addFuture(Actor a);
 

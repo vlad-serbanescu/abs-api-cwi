@@ -1,18 +1,22 @@
 package abs.api.cwi;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class LocalActor implements Comparable<Actor>, Actor {
+public class LocalActor implements Actor {
 
 	public ABSFutureTask<?> runningMessage;
 	private AtomicBoolean mainTaskIsRunning = new AtomicBoolean(false);
 	protected ConcurrentLinkedQueue<ABSFutureTask<?>> messageQueue = new ConcurrentLinkedQueue<ABSFutureTask<?>>();
+	protected ConcurrentHashMap<ABSFutureTask<?>, Set<ABSFutureTask<?>>> lockedQueue = new ConcurrentHashMap<>();
 	protected int syncCallContext = 0; // TODO : might need to be atomic
-	protected int counter = 0; // TODO : might need to be atomic
+	private int counter = 0; // TODO : might need to be atomic
 
 	class MainTask implements Runnable {
 		@Override
@@ -43,6 +47,8 @@ public class LocalActor implements Comparable<Actor>, Actor {
 
 	private boolean takeOrDie() {
 		synchronized (mainTaskIsRunning) {
+			//System.out.println("SC: "+ syncCallContext);
+			//System.out.println("SC: "+ messageQueue);
 			for (ABSFutureTask<?> absFutureTask : messageQueue) {
 				if ((syncCallContext == 0 || syncCallContext == absFutureTask.syncCallCounter)
 						&& absFutureTask.evaluateGuard()) {
@@ -96,6 +102,13 @@ public class LocalActor implements Comparable<Actor>, Actor {
 		await(runningMessage.continueWith(continuation, Guard.convert(m)));
 		// return m;
 	}
+	
+	@Override
+	public <V,T> void sendSync(Callable<V> message, Callable continuation) {
+		ABSFutureTask<V> m = new ABSFutureTask<V>(message, newCounter());
+		send(m);
+		await(runningMessage.continueWith(continuation, Guard.convert(m)));
+	}
 
 	// @Override
 	// public <V> void sendSync(Callable<V> message, RunnablewF continuation) {
@@ -128,7 +141,7 @@ public class LocalActor implements Comparable<Actor>, Actor {
 
 	}
 
-	private <V> void send(ABSFutureTask<V> messageArgument) {
+	public <V> void send(ABSFutureTask<V> messageArgument) {
 		messageQueue.add(messageArgument);
 		if (notRunningThenStart()) {
 			DeploymentComponent.submit(new MainTask());
@@ -159,7 +172,18 @@ public class LocalActor implements Comparable<Actor>, Actor {
 	private <T> void await(ABSFutureTask<T> m) {
 		if (!m.evaluateGuard()) {
 			m.enablingCondition.addFuture(this);
-			messageQueue.add(m);
+			/*if (m.enablingCondition instanceof FutureGuard) {
+				ABSFutureTask<?> key = ((FutureGuard) m.enablingCondition).future;
+				if (lockedQueue.containsKey(key))
+					lockedQueue.get(key).add(m);
+				else {
+					Set<ABSFutureTask<?>> disabledSet = new HashSet<>();
+					disabledSet.add(m);
+					lockedQueue.put(key, disabledSet);
+				}
+				m.enablingCondition = null;
+			} else*/
+				messageQueue.add(m);
 			throw new AwaitException();
 		}
 	}
@@ -168,9 +192,14 @@ public class LocalActor implements Comparable<Actor>, Actor {
 		private static final long serialVersionUID = 1L;
 	}
 
-	public int compareTo(Actor o) {
-		// TODO check
-		return this.hashCode() - o.hashCode();
+	public void enableMessages(ABSFutureTask<?> key) {
+//		System.out.println("LQ: "+ lockedQueue);
+//		System.out.println("LQ: "+ key +" "+ lockedQueue.containsKey(key));
+		Set<ABSFutureTask<?>> freedtasks =lockedQueue.remove(key);
+		for (ABSFutureTask<?> task : freedtasks) {
+			send(task);
+		}
+		
 	}
 
 }

@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
-public class ABSFutureTask<V> implements Serializable, Future<V>, Runnable {
+public class ABSFutureTask<V> implements Serializable, Future<V>, Runnable, Comparable<ABSFutureTask<V>> {
 	protected Guard enablingCondition = null;
 	protected final CompletableFuture<V> f;
 	protected Callable<V> task;
@@ -108,6 +108,19 @@ public class ABSFutureTask<V> implements Serializable, Future<V>, Runnable {
 	public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
 		throw new UnsupportedOperationException("will be implemented in future");
 	}
+	
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return super.toString()+" "+ syncCallCounter;
+	}
+
+	@Override
+	public int compareTo(ABSFutureTask<V> o) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 
 	// TODO implement equals, hashCode and toString when necessary
 }

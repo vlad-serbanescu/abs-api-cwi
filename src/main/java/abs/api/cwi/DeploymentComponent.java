@@ -64,12 +64,16 @@ public class DeploymentComponent {
 	}
 
 	public static void releaseAll(ABSFutureTask<?> m) {
+		//System.out.println(m + " " + lockedOnFutureActors + " " +
+		//lockedOnFutureActors.containsKey(m));
 		Set<Actor> freedActors = lockedOnFutureActors.remove(m);
+		// System.out.println("FA: " + freedActors);
 		if (freedActors != null) {
 			for (Actor localActor : freedActors) {
-				localActor.send((Runnable) () -> { 
-				}); // just awaken the actor if it has no running task at the
-					// moment
+				localActor.send(() -> {
+				});
+				// just awaken the actor if it has no running task at the
+				// moment
 			}
 		}
 		// System.out.println("Finished releasing");
@@ -87,12 +91,10 @@ public class DeploymentComponent {
 
 	public static void shutdown() {
 		mainExecutor.shutdown();
-		try {
-			while (!mainExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
-			}
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		/*
+		 * try { while (!mainExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+		 * } } catch (InterruptedException e) { // TODO Auto-generated catch
+		 * block e.printStackTrace(); }
+		 */
 	}
 }
