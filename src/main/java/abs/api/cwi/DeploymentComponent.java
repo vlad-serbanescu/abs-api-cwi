@@ -51,10 +51,11 @@ import javax.net.ServerSocketFactory;
  * The Class ABSActor.
  */
 public class DeploymentComponent {
-	private static ConcurrentHashMap<ABSFutureTask<?>, Set<Actor>> lockedOnFutureActors = new ConcurrentHashMap<>();
+	private static ConcurrentHashMap<ABSFutureTask<?>, Set<Actor>> awaitingOnFutureActors = new ConcurrentHashMap<>();
+	//private static ConcurrentHashMap<ABSFutureTask<?>, Set<Actor>> blockedOnFutureActors = new ConcurrentHashMap<>();
 
 	/** The main executor. */
-	private static ExecutorService mainExecutor = Executors.newFixedThreadPool(4);
+	private static ExecutorService mainExecutor = Executors.newCachedThreadPool();
 
 	private DeploymentComponent() {
 	}
@@ -64,30 +65,59 @@ public class DeploymentComponent {
 	}
 
 	public static void releaseAll(ABSFutureTask<?> m) {
-		//System.out.println(m + " " + lockedOnFutureActors + " " +
-		//lockedOnFutureActors.containsKey(m));
-		Set<Actor> freedActors = lockedOnFutureActors.remove(m);
+		// System.out.println(m + " " + lockedOnFutureActors + " " +
+		// lockedOnFutureActors.containsKey(m));
+//		if(!blockedOnFutureActors.isEmpty()){
+//			System.out.println("Blocked= "+blockedOnFutureActors);
+//			System.out.println("Releasing= "+m);
+//		}
+//		Set<Actor> releasedActors = blockedOnFutureActors.remove(m);
+
+		Set<Actor> freedActors = awaitingOnFutureActors.remove(m);
+
+//		if (releasedActors != null) {
+//			for (Actor actor : releasedActors) {
+//				LocalActor la = (LocalActor) actor;
+//				la.blocked = false;
+//				la.send(() -> {
+//				});
+//			}
+//		}
 		// System.out.println("FA: " + freedActors);
 		if (freedActors != null) {
 			for (Actor localActor : freedActors) {
+
 				localActor.send(() -> {
 				});
+
 				// just awaken the actor if it has no running task at the
 				// moment
+
 			}
 		}
 		// System.out.println("Finished releasing");
 	}
 
-	public static void lockActorOnFuture(Actor a, ABSFutureTask<?> future) {
-		if (lockedOnFutureActors.containsKey(future)) {
-			lockedOnFutureActors.get(future).add(a);
+	public static void awaitActorOnFuture(Actor a, ABSFutureTask<?> future) {
+		if (awaitingOnFutureActors.containsKey(future)) {
+			awaitingOnFutureActors.get(future).add(a);
 		} else {
 			Set<Actor> dependingActors = new HashSet<>();
 			dependingActors.add(a);
-			lockedOnFutureActors.put(future, dependingActors);
+			awaitingOnFutureActors.put(future, dependingActors);
 		}
 	}
+
+//	public static void blockActorOnFuture(Actor a, ABSFutureTask<?> future) {
+//		if (blockedOnFutureActors.containsKey(future)) {
+//			blockedOnFutureActors.get(future).add(a);
+//		} else {
+//			Set<Actor> dependingActors = new HashSet<>();
+//			dependingActors.add(a);
+//			blockedOnFutureActors.put(future, dependingActors);
+//		}
+//		System.out.println(blockedOnFutureActors);
+//	}
 
 	public static void shutdown() {
 		mainExecutor.shutdown();

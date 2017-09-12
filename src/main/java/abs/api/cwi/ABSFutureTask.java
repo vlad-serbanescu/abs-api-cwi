@@ -17,17 +17,20 @@ public class ABSFutureTask<V> implements Serializable, Future<V>, Runnable, Comp
 	protected Guard enablingCondition = null;
 	protected final CompletableFuture<V> f;
 	protected Callable<V> task;
-	protected int syncCallCounter = 0;
-	protected boolean syncChainInitiator = false; 
+	protected int priority = 0;
+	protected int syncCallContext = 0;
+	protected AbsKey ak;
+	protected boolean syncChainInitiator = false;
+	protected boolean strict = false;
 
 	public ABSFutureTask(Callable<V> task, int x) {
 		this(task);
-		this.syncCallCounter = x;
+		this.syncCallContext = x;
 	}
 
 	public ABSFutureTask(Runnable task, int x) {
 		this(task);
-		this.syncCallCounter = x;
+		this.syncCallContext = x;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -40,6 +43,7 @@ public class ABSFutureTask<V> implements Serializable, Future<V>, Runnable, Comp
 			throw new NullPointerException();
 		this.task = message;
 		f = new CompletableFuture<V>();
+		ak = new AbsKey(priority, strict);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -54,7 +58,7 @@ public class ABSFutureTask<V> implements Serializable, Future<V>, Runnable, Comp
 	}
 
 	boolean isSyncCall() {
-		return syncCallCounter != 0;
+		return syncCallContext != 0;
 	}
 
 	@Override
@@ -74,6 +78,8 @@ public class ABSFutureTask<V> implements Serializable, Future<V>, Runnable, Comp
 		return enablingCondition == null || enablingCondition.evaluate();
 	}
 
+	
+	
 	@Override
 	public void run() {
 		try {
@@ -108,19 +114,20 @@ public class ABSFutureTask<V> implements Serializable, Future<V>, Runnable, Comp
 	public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
 		throw new UnsupportedOperationException("will be implemented in future");
 	}
-	
+
 	@Override
 	public String toString() {
 		// TODO Auto-generated method stub
-		return super.toString()+" "+ syncCallCounter;
+		return super.toString() + " " + priority;
 	}
 
 	@Override
 	public int compareTo(ABSFutureTask<V> o) {
 		// TODO Auto-generated method stub
-		return 0;
+		return ak.compareTo(o.ak);
 	}
 
+	
 
 	// TODO implement equals, hashCode and toString when necessary
 }

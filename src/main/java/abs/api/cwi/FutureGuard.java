@@ -16,11 +16,17 @@ public class FutureGuard extends Guard {
 
 	@Override
 	void addFuture(Actor a) {
-		DeploymentComponent.lockActorOnFuture(a, future);
+		DeploymentComponent.awaitActorOnFuture(a, future);
 	}
+	
+	
 
 	@Override
 	boolean hasFuture() {
 		return true;
 	}
+
+//	void blockOnFuture(Actor a) {
+//		DeploymentComponent.blockActorOnFuture(a, future);
+//	}
 }

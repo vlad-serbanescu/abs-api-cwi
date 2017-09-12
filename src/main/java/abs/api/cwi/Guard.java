@@ -10,6 +10,7 @@ public abstract class Guard {
 	abstract boolean hasFuture();
 
 	abstract void addFuture(Actor a);
+	
 
 	static public Guard convert(Object o) {
 		if (o instanceof Supplier) {

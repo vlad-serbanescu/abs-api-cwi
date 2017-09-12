@@ -19,6 +19,9 @@ public class DisjunctionGuard extends Guard {
 		left.addFuture(a);
 		right.addFuture(a);	
 	}
+	
+	
+	
 
 	@Override
 	boolean hasFuture() {
