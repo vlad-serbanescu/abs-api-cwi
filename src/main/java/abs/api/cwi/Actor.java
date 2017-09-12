@@ -2,7 +2,7 @@ package abs.api.cwi;
 
 import java.util.concurrent.Callable;
 
-public interface Actor extends Comparable<Actor> {
+public interface Actor {
 
 	public void sendSync(Runnable message, Runnable continuation);
 
@@ -34,11 +34,6 @@ public interface Actor extends Comparable<Actor> {
 	public <V> void get(ABSFutureTask<V> f, RunnableGet<V> message);
 
 	public void enableMessages(ABSFutureTask<?> m);
-
-	@Override
-	default int compareTo(Actor o) {
-		return this.compare(o);
-	}
 
 	default int compare(Actor o) {
 		return 0;
