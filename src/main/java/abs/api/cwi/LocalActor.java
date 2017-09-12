@@ -105,6 +105,7 @@ public class LocalActor implements Actor {
 					if ((syncCallContext == 0 || syncCallContext == absFutureTask.syncCallContext)
 							&& absFutureTask.evaluateGuard()) {
 						runningMessage = absFutureTask;
+						bucket.remove(absFutureTask);
 						return true;
 					}
 					lastTask = absFutureTask;
