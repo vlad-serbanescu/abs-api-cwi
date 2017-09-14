@@ -1,7 +1,5 @@
 package abs.api.cwi;
 
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,7 +40,7 @@ public class LocalActor implements Actor {
 
 	public ABSFutureTask<?> runningMessage;
 	private AtomicBoolean mainTaskIsRunning = new AtomicBoolean(false);
-	protected ConcurrentSkipListMap<AbsKey, Set<ABSFutureTask<?>>> messageQueue = new ConcurrentSkipListMap<>();
+	protected ConcurrentSkipListMap<AbsKey, ConcurrentLinkedQueue<ABSFutureTask<?>>> messageQueue = new ConcurrentSkipListMap<>();
 	protected ConcurrentHashMap<ABSFutureTask<?>, Set<ABSFutureTask<?>>> lockedQueue = new ConcurrentHashMap<>();
 	protected int syncCallContext = 0; // TODO : might need to be atomic
 	private int counter = 0; // TODO : might need to be atomic
@@ -99,12 +97,13 @@ public class LocalActor implements Actor {
 
 			for (AbsKey ak : messageQueue.keySet()) {
 
-				Set<ABSFutureTask<?>> bucket = messageQueue.get(ak);
+				ConcurrentLinkedQueue<ABSFutureTask<?>> bucket = messageQueue.get(ak);
 				ABSFutureTask<?> lastTask = null;
 				for (ABSFutureTask<?> absFutureTask : bucket) {
 					if ((syncCallContext == 0 || syncCallContext == absFutureTask.syncCallContext)
 							&& absFutureTask.evaluateGuard()) {
 						runningMessage = absFutureTask;
+						bucket.remove(absFutureTask);
 						return true;
 					}
 					lastTask = absFutureTask;
@@ -216,7 +215,11 @@ public class LocalActor implements Actor {
 		if (messageQueue.containsKey(messageArgument.ak)) {
 			messageQueue.get(messageArgument.ak).add(messageArgument);
 		} else {
-			Set<ABSFutureTask<?>> bucket = new HashSet<>();
+<<<<<<< HEAD
+			ConcurrentLinkedQueue<ABSFutureTask<?>> bucket = new ConcurrentLinkedQueue<>();
+=======
+			Set<ABSFutureTask<?>> bucket = new ConcurrentSkipListSet<>();
+>>>>>>> origin/LocalOnly
 			bucket.add(messageArgument);
 			messageQueue.put(messageArgument.ak, bucket);
 		}
@@ -273,7 +276,11 @@ public class LocalActor implements Actor {
 			if (messageQueue.containsKey(m.ak)) {
 				messageQueue.get(m.ak).add(m);
 			} else {
-				Set<ABSFutureTask<?>> bucket = new HashSet<>();
+<<<<<<< HEAD
+				ConcurrentLinkedQueue<ABSFutureTask<?>> bucket = new ConcurrentLinkedQueue<>();
+=======
+				Set<ABSFutureTask<?>> bucket = new ConcurrentSkipListSet<>();
+>>>>>>> origin/LocalOnly
 				bucket.add(m);
 				messageQueue.put(m.ak, bucket);
 			}
