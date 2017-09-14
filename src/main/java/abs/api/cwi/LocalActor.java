@@ -1,7 +1,5 @@
 package abs.api.cwi;
 
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -217,7 +215,7 @@ public class LocalActor implements Actor {
 		if (messageQueue.containsKey(messageArgument.ak)) {
 			messageQueue.get(messageArgument.ak).add(messageArgument);
 		} else {
-			Set<ABSFutureTask<?>> bucket = new HashSet<>();
+			Set<ABSFutureTask<?>> bucket = new ConcurrentSkipListSet<>();
 			bucket.add(messageArgument);
 			messageQueue.put(messageArgument.ak, bucket);
 		}
@@ -274,7 +272,7 @@ public class LocalActor implements Actor {
 			if (messageQueue.containsKey(m.ak)) {
 				messageQueue.get(m.ak).add(m);
 			} else {
-				Set<ABSFutureTask<?>> bucket = new HashSet<>();
+				Set<ABSFutureTask<?>> bucket = new ConcurrentSkipListSet<>();
 				bucket.add(m);
 				messageQueue.put(m.ak, bucket);
 			}
