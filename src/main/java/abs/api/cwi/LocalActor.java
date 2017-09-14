@@ -23,6 +23,7 @@ class AbsKey implements Comparable<AbsKey> {
 
 	@Override
 	public int compareTo(AbsKey o) {
+
 		if (o.priority == priority) {
 			if (o.strict == strict)
 				return 0;
@@ -123,7 +124,7 @@ public class LocalActor implements Actor {
 				// return true;
 				// }
 				// }
-				
+
 			}
 			mainTaskIsRunning.set(false);
 			return false;
@@ -215,11 +216,7 @@ public class LocalActor implements Actor {
 		if (messageQueue.containsKey(messageArgument.ak)) {
 			messageQueue.get(messageArgument.ak).add(messageArgument);
 		} else {
-<<<<<<< HEAD
 			ConcurrentLinkedQueue<ABSFutureTask<?>> bucket = new ConcurrentLinkedQueue<>();
-=======
-			Set<ABSFutureTask<?>> bucket = new ConcurrentSkipListSet<>();
->>>>>>> origin/LocalOnly
 			bucket.add(messageArgument);
 			messageQueue.put(messageArgument.ak, bucket);
 		}
@@ -238,7 +235,7 @@ public class LocalActor implements Actor {
 		int context = this.syncCallContext;
 		this.syncCallContext = 0;
 		await(runningMessage.continueWith(message, guard));
-		//this.syncCallContext = context;
+		// this.syncCallContext = context;
 	}
 
 	@Override
@@ -246,7 +243,7 @@ public class LocalActor implements Actor {
 		int context = this.syncCallContext;
 		this.syncCallContext = 0;
 		await(runningMessage.continueWith(message, guard));
-		//this.syncCallContext = context;
+		// this.syncCallContext = context;
 	}
 
 	private <T> void await(ABSFutureTask<T> m) {
@@ -276,11 +273,7 @@ public class LocalActor implements Actor {
 			if (messageQueue.containsKey(m.ak)) {
 				messageQueue.get(m.ak).add(m);
 			} else {
-<<<<<<< HEAD
 				ConcurrentLinkedQueue<ABSFutureTask<?>> bucket = new ConcurrentLinkedQueue<>();
-=======
-				Set<ABSFutureTask<?>> bucket = new ConcurrentSkipListSet<>();
->>>>>>> origin/LocalOnly
 				bucket.add(m);
 				messageQueue.put(m.ak, bucket);
 			}
@@ -328,9 +321,9 @@ public class LocalActor implements Actor {
 
 	@Override
 	public <T, V> void get(CallableGet<T, V> continuation, ABSFutureTask<V> f) {
-		//newCounter();
-		runningMessage.priority=++counter;
-		runningMessage.strict=true;
+		// newCounter();
+		runningMessage.priority = ++counter;
+		runningMessage.strict = true;
 		Callable continuation2 = () -> continuation.run(f.get());
 		await(runningMessage.continueWith(continuation2, Guard.convert(f)));
 
@@ -338,9 +331,9 @@ public class LocalActor implements Actor {
 
 	@Override
 	public <V> void get(ABSFutureTask<V> f, RunnableGet<V> continuation) {
-		//newCounter();
-		runningMessage.priority=++counter;
-		runningMessage.strict=true;
+		// newCounter();
+		runningMessage.priority = ++counter;
+		runningMessage.strict = true;
 		Runnable continuation2 = () -> continuation.run(f.get());
 		await(runningMessage.continueWith(continuation2, Guard.convert(f)));
 
