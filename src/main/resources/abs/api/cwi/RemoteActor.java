@@ -6,14 +6,10 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.Future;
-import java.util.function.Supplier;
 
-public abstract class RemoteActor extends DeploymentComponent {
+public abstract class RemoteActor extends ActorSystem {
 
 	private URI name;
 

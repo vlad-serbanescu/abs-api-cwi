@@ -2,9 +2,9 @@ package abs.api.cwi;
 
 public class FutureGuard extends Guard {
 
-	public ABSFutureTask<?> future;
+	public ABSFuture<?> future;
 
-	public FutureGuard(ABSFutureTask<?> future) {
+	public FutureGuard(ABSFuture<?> future) {
 		super();
 		this.future = future;
 	}
@@ -16,7 +16,7 @@ public class FutureGuard extends Guard {
 
 	@Override
 	void addFuture(Actor a) {
-		DeploymentComponent.awaitActorOnFuture(a, future);
+		ActorSystem.awaitActorOnFuture(a, future);
 	}
 	
 	
@@ -27,6 +27,6 @@ public class FutureGuard extends Guard {
 	}
 
 //	void blockOnFuture(Actor a) {
-//		DeploymentComponent.blockActorOnFuture(a, future);
+//		ActorSystem.blockActorOnFuture(a, future);
 //	}
 }
