@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.concurrent.Callable;
 
 public class ABSTask<V> implements Serializable, Runnable {
+	static Callable<ABSFuture<Object>> emptyTask = () -> ABSFuture.of(null);
+
 	protected Guard enablingCondition = null;
 	protected final ABSFuture<V> resultFuture;
 	protected Callable<ABSFuture<V>> task;

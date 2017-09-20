@@ -5,6 +5,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static abs.api.cwi.ABSTask.emptyTask;
+
 class AbsKey implements Comparable<AbsKey> {
 	private int priority;
 	private int strict;
@@ -43,7 +45,6 @@ public class LocalActor implements Actor {
 			if (!takeOrDie())
 				return; // no enabled message or empty queue
 			runningMessage.run();
-			ActorSystem.releaseAll(runningMessage);
 			ActorSystem.submit(this);  // instead of a loop we submit again, thus allowing other actors' tasks to get a chance of being scheduled in the meantime
 		}
 	}
@@ -78,7 +79,7 @@ public class LocalActor implements Actor {
 	}
 
 	private <V> void schedule(ABSTask<V> messageArgument, int priority, boolean strict) {
-		if (ActorSystem.emptyTask.equals(messageArgument.task))
+		if (emptyTask.equals(messageArgument.task))
 			return;
 
 		AbsKey key = new AbsKey(priority, strict);
@@ -92,7 +93,7 @@ public class LocalActor implements Actor {
 	}
 
 	@Override
-	public <V> ABSFuture<V> send(Callable<ABSFuture<V>> message) {
+	public final <V> ABSFuture<V> send(Callable<ABSFuture<V>> message) {
 		ABSTask<V> m = new ABSTask<>(message);
 		schedule(m, DEFAULT_PRIORITY, NON_STRICT);
 		if (notRunningThenStart()) {
@@ -102,16 +103,21 @@ public class LocalActor implements Actor {
 	}
 
 	@Override
-	public <V> ABSFuture<V> spawn(Guard guard, Callable<ABSFuture<V>> message) {
+	public final <V> ABSFuture<V> spawn(Guard guard, Callable<ABSFuture<V>> message) {
 		ABSTask<V> m = new ABSTask<>(message, guard);
 		schedule(m, DEFAULT_PRIORITY, NON_STRICT);
 		return m.getResultFuture();
 	}
 
 	@Override
-	public <T, V> ABSFuture<T> getSpawn(ABSFuture<V> f, CallableGet<T, V> message) {
+	public final <T, V> ABSFuture<T> getSpawn(ABSFuture<V> f, CallableGet<T, V> message) {
+		return getSpawn(f, message, DEFAULT_PRIORITY, NON_STRICT);
+	}
+
+	@Override
+	public final <T, V> ABSFuture<T> getSpawn(ABSFuture<V> f, CallableGet<T, V> message, int priority, boolean strict) {
 		ABSTask<T> m = new ABSTask<>(() -> message.run(f.getOrNull()), Guard.convert(f));
-		schedule(m, HIGH_PRIORITY, STRICT);
+		schedule(m, priority, strict);
 		return m.getResultFuture();
 	}
 }
