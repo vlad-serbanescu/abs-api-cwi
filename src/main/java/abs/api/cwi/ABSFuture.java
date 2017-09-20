@@ -10,23 +10,13 @@ import static abs.api.cwi.ABSTask.emptyTask;
 
 
 public class ABSFuture<V> implements Future<V> {
-    private CompletableFuture<V> internal = new CompletableFuture<>();
+    private boolean completed = false;
+    private V value = null;
     private Set<Actor> awaitingActors = new ConcurrentSkipListSet<>();
     private Set<ABSFuture> awaitingFutures = ConcurrentHashMap.newKeySet();
 
-    ABSFuture() { /* create an uncompleted future */ }
-
-    private ABSFuture(V value) {
-        // create a completed future, for the purpose of returning values
-        this.complete(value);
-    }
-
-    public void awaiting(Actor actor){
-        awaitingActors.add(actor);
-    }
-
     public static <T> ABSFuture<T> of(T value) {
-        return new ABSFuture<>(value);
+        return new CompletedABSFuture<>(value);
     }
 
     public static ABSFuture<Void> completedVoidFuture() {
@@ -42,23 +32,39 @@ public class ABSFuture<V> implements Future<V> {
      */
     public static <R> ABSFuture<List<R>> sequence(Collection<ABSFuture<R>> futures) {
         ABSFuture<List<R>> dependentFuture = new SequencedABSFuture<>(futures);
+        // First register as dependant then check for completion.
+        // This might lead to double notification in some corner cases but doesn't miss any
         futures.forEach(fut -> fut.awaitingFutures.add(dependentFuture));
+        if (dependentFuture.isDone()) {
+            dependentFuture.notifyDependants();
+        }
         return dependentFuture;
     }
 
+    void awaiting(Actor actor){
+        awaitingActors.add(actor);
+    }
+
     void forward(ABSFuture<V> target) {
-        this.internal = target.internal;
+        // First register as dependant then check for completion.
+        // This might lead to double notification in some corner cases but doesn't miss any
         target.awaitingFutures.add(this);
+        if (isDone()) {
+            notifyDependants();
+        }
     }
 
     void complete(V value) {
-        internal.complete(value);
-        completeDependants();
+        if (! this.completed) {
+            this.value = value;
+            this.completed = true;
+        }
+        notifyDependants();
     }
 
-    private void completeDependants() {
+    private void notifyDependants() {
         awaitingActors.forEach(localActor -> localActor.send(emptyTask));
-        awaitingFutures.forEach(ABSFuture::completeDependants);
+        awaitingFutures.forEach(ABSFuture::notifyDependants);
     }
 
     @Override
@@ -73,18 +79,11 @@ public class ABSFuture<V> implements Future<V> {
 
     @Override
     public boolean isDone() {
-        return internal.isDone();
+        return this.completed;
     }
 
     public V getOrNull() {
-        if (internal.isDone())
-            try {
-                return internal.get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException("Failed to get the future result.", e);
-            }
-        else
-            return null;
+        return this.value;
     }
 
     @Override
@@ -95,6 +94,12 @@ public class ABSFuture<V> implements Future<V> {
     @Override
     public final V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         throw new UnsupportedOperationException("Cannot get the value of a future directly. Use provided methods in the Actor interface to install a continuation.");
+    }
+}
+
+class CompletedABSFuture<T> extends ABSFuture<T> {
+    CompletedABSFuture(T value) {
+        this.complete(value);
     }
 }
 
