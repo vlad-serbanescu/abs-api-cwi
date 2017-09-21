@@ -105,6 +105,7 @@ public class LocalActor implements Actor {
 	@Override
 	public final <V> ABSFuture<V> spawn(Guard guard, Callable<ABSFuture<V>> message) {
 		ABSTask<V> m = new ABSTask<>(message, guard);
+		guard.addFuture(this);
 		schedule(m, DEFAULT_PRIORITY, NON_STRICT);
 		return m.getResultFuture();
 	}
@@ -116,7 +117,9 @@ public class LocalActor implements Actor {
 
 	@Override
 	public final <T, V> ABSFuture<T> getSpawn(ABSFuture<V> f, CallableGet<T, V> message, int priority, boolean strict) {
-		ABSTask<T> m = new ABSTask<>(() -> message.run(f.getOrNull()), Guard.convert(f));
+		Guard guard = Guard.convert(f);
+		ABSTask<T> m = new ABSTask<>(() -> message.run(f.getOrNull()), guard);
+		guard.addFuture(this);
 		schedule(m, priority, strict);
 		return m.getResultFuture();
 	}
