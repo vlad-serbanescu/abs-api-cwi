@@ -25,6 +25,7 @@ class Master(var numWorkers : Int,var priorities : Int,var solutionsLimit : Int,
     getSpawn(fut, (result: List[Array[Int]]) => {
       println(s"Found ${result.size} solutions")
       println("-------------------------------- Program successfully completed! in " + (System.currentTimeMillis() - t1))
+      ActorSystem.shutdown()
       ABSFuture.completedVoidFuture()
     })
   }
