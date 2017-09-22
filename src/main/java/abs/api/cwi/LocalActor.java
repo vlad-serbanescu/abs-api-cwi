@@ -30,11 +30,6 @@ class AbsKey implements Comparable<AbsKey> {
 }
 
 public class LocalActor implements Actor {
-	private static final boolean STRICT = true;
-	private static final boolean NON_STRICT = false;
-	private static final int DEFAULT_PRIORITY = 0;
-	private static final int HIGH_PRIORITY = 1;
-
 	private ABSTask<?> runningMessage;
 	private final AtomicBoolean mainTaskIsRunning = new AtomicBoolean(false);
 	private ConcurrentSkipListMap<AbsKey, ConcurrentLinkedQueue<ABSTask<?>>> messageQueue = new ConcurrentSkipListMap<>();
@@ -110,9 +105,10 @@ public class LocalActor implements Actor {
 		return m.getResultFuture();
 	}
 
+	// Just make the super implementation final
 	@Override
 	public final <T, V> ABSFuture<T> getSpawn(ABSFuture<V> f, CallableGet<T, V> message) {
-		return getSpawn(f, message, DEFAULT_PRIORITY, NON_STRICT);
+		return Actor.super.getSpawn(f, message);
 	}
 
 	@Override
