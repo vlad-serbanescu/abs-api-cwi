@@ -37,10 +37,10 @@ public class LocalActor implements Actor {
 	private class MainTask implements Runnable {
 		@Override
 		public void run() {
-			if (!takeOrDie())
-				return; // no enabled message or empty queue
-			runningMessage.run();
-			ActorSystem.submit(this);  // instead of a loop we submit again, thus allowing other actors' tasks to get a chance of being scheduled in the meantime
+			if (takeOrDie()) {
+				runningMessage.run();
+				ActorSystem.submit(this);  // instead of a loop we submit again, thus allowing other actors' tasks to get a chance of being scheduled in the meantime
+			}
 		}
 	}
 
@@ -74,8 +74,9 @@ public class LocalActor implements Actor {
 	}
 
 	private <V> void schedule(ABSTask<V> messageArgument, int priority, boolean strict) {
-		if (emptyTask.equals(messageArgument.task))
+		if (emptyTask.equals(messageArgument.task)) {
 			return;
+		}
 
 		AbsKey key = new AbsKey(priority, strict);
 		if (messageQueue.containsKey(key)) {

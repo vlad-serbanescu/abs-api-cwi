@@ -22,18 +22,18 @@ class Master(var numWorkers : Int,var priorities : Int,var solutionsLimit : Int,
       println("-------------------------------- Program successfully completed! in " + (System.currentTimeMillis() - t1))
       ActorSystem.shutdown()
     }
-    ABSFuture.completedVoidFuture()
+    ABSFuture.done()
   }
 
   def sendWork(list: Array[Int], depth: Int, priorities: Int): ABSFuture[Void] = {
-    println(s"Work $depth")
+//    println(s"Work $depth")
     val worker = workers.next()
     worker.send(() => worker.nqueensKernelPar(list, depth, priorities))
-    ABSFuture.completedVoidFuture()
+    ABSFuture.done()
   }
 
   {
-    println(s"Boardsize = ${size.toString}, number of solutions should be ${solutionsLimit.toString}")
+    println(s"NON-CCOP: Boardsize = ${size.toString}, number of solutions should be ${solutionsLimit.toString}")
     val inArray: Array[Int] = new Array[Int](0)
     this.send(() => this.sendWork(inArray, 0, priorities))
   }

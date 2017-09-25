@@ -9,7 +9,7 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
   }
 
   def nqueensKernelPar(board: Array[Int], depth: Int, priority: Int): ABSFuture[Void] = {
-    println(s"Par $depth $size $priority ${board.length}")
+//    println(s"Par $depth $size $priority ${board.length}")
     if (size != depth) {
       if (depth >= threshold) {
         this.nqueensKernelSeq(board, depth)
@@ -27,12 +27,12 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
       board.foreach(print)
       master.send(() => master.success())
     }
-    ABSFuture.completedVoidFuture()
+    ABSFuture.done()
   }
 
   // internal method called only sequentially
   private def nqueensKernelSeq(board: Array[Int], depth: Int): Unit = {
-    println(s"Seq $depth")
+//    println(s"Seq $depth")
     if (size != depth) {
       (0 until size)
         .map(Functions.copyBoard(board, depth, _))
@@ -41,7 +41,7 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
     } else {
       master.send(() => master.success())
     }
-    println(s"Seq $depth is done")
+//    println(s"Seq $depth is done")
   }
 }
 
