@@ -9,7 +9,7 @@ import java.util.concurrent.Executors;
 
 public class ActorSystem {
 	/** The main executor. */
-	private static ExecutorService mainExecutor = Executors.newCachedThreadPool();
+	private static ExecutorService mainExecutor = Executors.newFixedThreadPool(10);
 
 	private ActorSystem() { }
 

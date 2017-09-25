@@ -114,16 +114,6 @@ class SequencedABSFuture<R> extends ABSFuture<List<R>> implements Actor {
     }
 
     @Override
-    void complete(List<R> value) {
-        throw new UnsupportedOperationException("Cannot complete a sequenced future.");
-    }
-
-    @Override
-    void forward(ABSFuture<List<R>> dummy) {
-        throw new UnsupportedOperationException("Cannot forward a sequenced future.");
-    }
-
-    @Override
     public boolean isDone() {
         return completed;
     }
@@ -145,6 +135,16 @@ class SequencedABSFuture<R> extends ABSFuture<List<R>> implements Actor {
         if (completed)
             notifyDependant();
         return null;
+    }
+
+    @Override
+    void complete(List<R> value) {
+        throw new UnsupportedOperationException("Cannot complete a sequenced future.");
+    }
+
+    @Override
+    void forward(ABSFuture<List<R>> dummy) {
+        throw new UnsupportedOperationException("Cannot forward a sequenced future.");
     }
 
     @Override
