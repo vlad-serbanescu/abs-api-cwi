@@ -1,10 +1,12 @@
 package coopNoLoadBalancing
 
-import abs.api.cwi
 import abs.api.cwi._
 import common.FastFunctions
+import abs.api.cwi.ABSFuture.done
+import abs.api.cwi.ABSFutureSugar._
 
-class Worker(var threshold: Int, var size: Int) extends LocalActor with IWorker {
+
+class Worker(var threshold: Int, var size: Int) extends SugaredActor with IWorker {
 
   def sendWork(list: Array[Int], depth: Int, priorities: Int): ABSFuture[List[Array[Int]]] = {
     //    println(s"Work $depth")
@@ -16,7 +18,7 @@ class Worker(var threshold: Int, var size: Int) extends LocalActor with IWorker 
 //    println(s"Par $depth $size $priority ${board.length} $this")
     if (size != depth) {
       if (depth >= threshold) {
-        ABSFuture.value(this.nqueensKernelSeq(board, depth).toList)
+        done(this.nqueensKernelSeq(board, depth).toList)
       } else {
         val newDepth: Int = depth + 1
         var i: Int = 0
@@ -31,13 +33,10 @@ class Worker(var threshold: Int, var size: Int) extends LocalActor with IWorker 
           }
           i += 1
         }
-        val seqFut: ABSFuture[List[List[Array[Int]]]] = cwi.ABSFutureSugar.sequence(futures)
-        getSpawn(seqFut, (list: List[List[Array[Int]]]) => {
-          ABSFuture.value(list.flatten)
-        })
+        sequence(futures) onSuccess (list => done(list.flatten))
       }
     } else {
-      ABSFuture.value(List(board))
+      done(List(board))
     }
   }
 

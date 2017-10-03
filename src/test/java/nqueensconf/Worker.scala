@@ -2,13 +2,16 @@ package nqueensconf
 
 import abs.api.cwi._
 import common.{FastFunctions, Functions}
+import abs.api.cwi.ABSFuture.done
+import abs.api.cwi.ABSFutureSugar.VoidFuture
+
 
 class Worker(var master: IMaster, var threshold: Int, var size: Int) extends LocalActor with IWorker {
   {
     println("Worker started")
   }
 
-  def nqueensKernelPar(board: Array[Int], depth: Int, priority: Int): ABSFuture[Void] = {
+  def nqueensKernelPar(board: Array[Int], depth: Int, priority: Int): VoidFuture = {
 //    println(s"Par $depth $size $priority ${board.length}")
     if (size != depth) {
       if (depth >= threshold) {
@@ -32,7 +35,7 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
       board.foreach(print)
       master.send(() => master.success(board))
     }
-    ABSFuture.done()
+    done
   }
 
   // internal method called only sequentially

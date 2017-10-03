@@ -2,7 +2,23 @@ package abs.api.cwi
 
 import java.util.concurrent.Callable
 
+abstract class SugaredActor extends LocalActor {
+  implicit val hostActor: LocalActor = this
+
+  def absMethod[T](fn: => T): ABSFuture[T] = ABSFuture.done(fn)
+
+  def absVoidMethod(fn: => Unit): ABSFuture[Void] = {fn; ABSFuture.done}
+
+}
+
 object ABSFutureSugar {
+  type VoidFuture = ABSFuture[Void]
+
+  implicit class ABSFutureImplicit[V] (fut: ABSFuture[V]) {
+    def onSuccess[R](continuation: CallableGet[R, V])(implicit hostActor: LocalActor) =
+      hostActor.getSpawn(fut, continuation)
+  }
+
   def sequence[R](futures: Iterable[ABSFuture[R]]): ABSFuture[List[R]] = {
     new ABSFuture[List[R]] with Actor {
       private var completed = false

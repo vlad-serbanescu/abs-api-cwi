@@ -1,10 +1,7 @@
 package nqueensconf
 
-import abs.api.cwi._
 
-
-object Main extends LocalActor {
-
+object Main {
     def main(args: Array[String]): Unit = {
         // Init section: nqueens
         val numWorkers: Int = 4

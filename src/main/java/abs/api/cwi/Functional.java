@@ -484,7 +484,7 @@ public static <K, V> Map<K, V> put(Map<K, V> map, K key, V value) {
  * Creates a new {@link Pair}.
  * 
  * @param key the first element
- * @param value the second element
+ * @param done the second element
  * @return an instance of {@link Pair}
  * @deprecated Try to use {@link #pair(Object, Object)} which
  *             uses standard Java's {@link Entry}.
@@ -600,7 +600,7 @@ public static void print(Object o) {
  * method with <code>GREEN</code> and <code>RED</code> color
  * support on ANSI terminal. Use with caution.
  * 
- * @param bool the value
+ * @param bool the done
  */
 public static void println(final boolean bool) {
   if (bool) {

@@ -1,10 +1,12 @@
 package nqueenscoop
 
-import abs.api.cwi
+import abs.api.cwi.ABSFutureSugar._
 import abs.api.cwi._
 import common.FastFunctions
+import abs.api.cwi.ABSFuture.done
 
-class Worker(var master: IMaster, var threshold: Int, var size: Int) extends LocalActor with IWorker {
+
+class Worker(var master: IMaster, var threshold: Int, var size: Int) extends SugaredActor with IWorker {
   {
     println("Worker started")
   }
@@ -13,11 +15,11 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
 //    println(s"Par $depth $size $priority ${board.length} $this")
     if (size != depth) {
       if (depth >= threshold) {
-        ABSFuture.value(this.nqueensKernelSeq(board, depth).toList)
+        done(this.nqueensKernelSeq(board, depth).toList)
       } else {
         val newDepth: Int = depth + 1
         var i: Int = 0
-        var futures: List[ABSFuture[List[Array[Int]]]] = List[ABSFuture[List[Array[Int]]]]()
+        var futures = List[ABSFuture[List[Array[Int]]]]()
         while (i < size) {
           val b: Array[Int] = new Array[Int](newDepth)
           System.arraycopy(board, 0, b, 0, depth)
@@ -28,14 +30,11 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
           }
           i += 1
         }
-        val seqFut: ABSFuture[List[List[Array[Int]]]] = cwi.ABSFutureSugar.sequence(futures)
-        getSpawn(seqFut, (list: List[List[Array[Int]]]) => {
-//          println(s"sequenced $this")
-          ABSFuture.value(list.flatten)
-        })
+
+        sequence(futures).onSuccess(list => absMethod {list.flatten})
       }
     } else {
-      ABSFuture.value(List(board))
+      done(List(board))
     }
   }
 

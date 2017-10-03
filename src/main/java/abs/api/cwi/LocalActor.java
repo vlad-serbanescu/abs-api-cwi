@@ -29,10 +29,14 @@ class AbsKey implements Comparable<AbsKey> {
 	}
 }
 
-public class LocalActor implements Actor {
+public abstract class LocalActor implements Actor {
 	private ABSTask<?> runningMessage;
 	private final AtomicBoolean mainTaskIsRunning = new AtomicBoolean(false);
 	private ConcurrentSkipListMap<AbsKey, ConcurrentLinkedQueue<ABSTask<?>>> messageQueue = new ConcurrentSkipListMap<>();
+
+	{
+		this.send(this::init);
+	}
 
 	private class MainTask implements Runnable {
 		@Override
@@ -119,5 +123,19 @@ public class LocalActor implements Actor {
 		guard.addFuture(this);
 		schedule(m, priority, strict);
 		return m.getResultFuture();
+	}
+
+	/**
+	 * This method must be overridden to perform initialization tasks inside an actor.
+	 * Even though one can (according to Java principles) do initialization in the class constructor,
+	 * that is fine within actors as long as there is no side effect. Otherwise, operations like sending
+	 * messages must happen inside the init method. The main difference is that the init method is run
+	 * in the actor thread, while constructor is run in the thread creating the actor, which is typically
+	 * done from inside another actor.
+	 *
+	 * @return
+	 */
+	public ABSFuture<Void> init() {
+		return ABSFuture.done();
 	}
 }

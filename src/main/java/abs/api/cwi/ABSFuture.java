@@ -16,7 +16,7 @@ public class ABSFuture<V> {
     private boolean completed = false;
     private Set<Actor> awaitingActors = ConcurrentHashMap.newKeySet();
 
-    public static <T> ABSFuture<T> value(T value) {
+    public static <T> ABSFuture<T> done(T value) {
         return new CompletedABSFuture<>(value);
     }
 
@@ -26,14 +26,14 @@ public class ABSFuture<V> {
 
     /**
      * This convenience method converts a collection of futures into one future, which is done when
-     * all those futures are done. Then the internal value of this future is a list containing all
+     * all those futures are done. Then the internal done of this future is a list containing all
      * results of the input future collection. It is not possible to complete or cancel such a
      * sequenced future.
      * All input futures must contain the same type of result.
      */
     public static <R> ABSFuture<List<R>> sequence(Collection<ABSFuture<R>> futures) {
         if (futures.isEmpty())
-            return value(new ArrayList<>());
+            return done(new ArrayList<>());
         return new SequencedABSFuture<>(futures);
     }
 
@@ -77,7 +77,7 @@ public class ABSFuture<V> {
         return (target == null) ? this.completed : target.isDone();
     }
 
-    public V getOrNull() {
+    V getOrNull() {
         return (target == null) ? this.value : target.getOrNull();
     }
 }
