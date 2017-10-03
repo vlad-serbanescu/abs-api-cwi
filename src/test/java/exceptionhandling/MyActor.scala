@@ -1,0 +1,5 @@
+package exceptionhandling
+
+class MyActor {
+
+}
