@@ -30,7 +30,7 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
     } else {
       println("solution")
       board.foreach(print)
-      master.send(() => master.success())
+      master.send(() => master.success(board))
     }
     ABSFuture.done()
   }
@@ -51,22 +51,9 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
         i += 1
       }
     } else {
-      master.send(() => master.success())
+      master.send(() => master.success(board))
     }
 //    println(s"Seq $depth is done")
   }
 }
 
-
-
-//        var i: Int = 0
-//        while (i < size) {
-//          val b: Array[Int] = new Array[Int](newDepth)
-//          System.arraycopy(board, 0, b, 0, depth)
-//          b(depth) = i
-//          if (Functions.boardValid(b, newDepth)) {
-//            println(s"new depth: $newDepth")
-//            master.send(() => master.sendWork(b, newDepth, priority - 1))
-//          }
-//          i += 1
-//        }

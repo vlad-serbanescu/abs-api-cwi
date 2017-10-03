@@ -16,7 +16,7 @@ class Worker(var threshold: Int, var size: Int) extends LocalActor with IWorker 
 //    println(s"Par $depth $size $priority ${board.length} $this")
     if (size != depth) {
       if (depth >= threshold) {
-        ABSFuture.of(this.nqueensKernelSeq(board, depth).toList)
+        ABSFuture.value(this.nqueensKernelSeq(board, depth).toList)
       } else {
         val newDepth: Int = depth + 1
         var i: Int = 0
@@ -33,11 +33,11 @@ class Worker(var threshold: Int, var size: Int) extends LocalActor with IWorker 
         }
         val seqFut: ABSFuture[List[List[Array[Int]]]] = cwi.ABSFutureSugar.sequence(futures)
         getSpawn(seqFut, (list: List[List[Array[Int]]]) => {
-          ABSFuture.of(list.flatten)
+          ABSFuture.value(list.flatten)
         })
       }
     } else {
-      ABSFuture.of(List(board))
+      ABSFuture.value(List(board))
     }
   }
 

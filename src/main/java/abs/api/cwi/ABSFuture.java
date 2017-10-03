@@ -14,9 +14,9 @@ public class ABSFuture<V> {
     private V value = null;
     private ABSFuture<V> target = null;
     private boolean completed = false;
-    Set<Actor> awaitingActors = ConcurrentHashMap.newKeySet();
+    private Set<Actor> awaitingActors = ConcurrentHashMap.newKeySet();
 
-    public static <T> ABSFuture<T> of(T value) {
+    public static <T> ABSFuture<T> value(T value) {
         return new CompletedABSFuture<>(value);
     }
 
@@ -33,7 +33,7 @@ public class ABSFuture<V> {
      */
     public static <R> ABSFuture<List<R>> sequence(Collection<ABSFuture<R>> futures) {
         if (futures.isEmpty())
-            return of(new ArrayList<>());
+            return value(new ArrayList<>());
         return new SequencedABSFuture<>(futures);
     }
 
@@ -129,7 +129,7 @@ class SequencedABSFuture<R> extends ABSFuture<List<R>> implements Actor {
     }
 
     @Override
-    synchronized public <V> ABSFuture<V> send(Callable<ABSFuture<V>> message) {
+    public <V> ABSFuture<V> send(Callable<ABSFuture<V>> message) {
         if (!completed)
             completed = futures.stream().allMatch(ABSFuture::isDone);
         if (completed)

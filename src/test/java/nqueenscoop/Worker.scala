@@ -13,7 +13,7 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
 //    println(s"Par $depth $size $priority ${board.length} $this")
     if (size != depth) {
       if (depth >= threshold) {
-        ABSFuture.of(this.nqueensKernelSeq(board, depth).toList)
+        ABSFuture.value(this.nqueensKernelSeq(board, depth).toList)
       } else {
         val newDepth: Int = depth + 1
         var i: Int = 0
@@ -30,11 +30,12 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
         }
         val seqFut: ABSFuture[List[List[Array[Int]]]] = cwi.ABSFutureSugar.sequence(futures)
         getSpawn(seqFut, (list: List[List[Array[Int]]]) => {
-          ABSFuture.of(list.flatten)
+//          println(s"sequenced $this")
+          ABSFuture.value(list.flatten)
         })
       }
     } else {
-      ABSFuture.of(List(board))
+      ABSFuture.value(List(board))
     }
   }
 
@@ -55,6 +56,7 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
       }
       result
     } else {
+//      println("Solution "+this)
       Vector(board) // solution
     }
   }

@@ -12,13 +12,15 @@ class Master(var numWorkers : Int,var priorities : Int,var solutionsLimit : Int,
   }
   private final val workers = Iterator.continually(workerSeq).flatten
 
+  var result: List[Array[Int]] = List()
   private var resultCounter: Int = 0
   private val t1 = System.currentTimeMillis()
 
-  def success(): ABSFuture[Void] = {
+  def success(solution: Array[Int]): ABSFuture[Void] = {
+    result = solution +: result
     resultCounter = resultCounter + 1
     if (Objects.equals(resultCounter, solutionsLimit)) {
-      println(s"Found ${resultCounter.toString} solutions")
+      println(s"Found ${result.size} solutions")
       println("-------------------------------- Program successfully completed! in " + (System.currentTimeMillis() - t1))
       ActorSystem.shutdown()
     }
