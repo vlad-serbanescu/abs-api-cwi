@@ -1,13 +1,32 @@
 package abs.api.cwi
 
+import java.lang
 import java.util.concurrent.Callable
+import java.util.function.Supplier
 
 abstract class SugaredActor extends LocalActor {
   implicit val hostActor: LocalActor = this
 
+  class GuardHelper private[SugaredActor] (g: Guard) {
+    def execute[T](continuation: Callable[ABSFuture[T]]): ABSFuture[T] = {
+      hostActor.spawn(g, continuation)
+    }
+  }
+
   def absMethod[T](fn: => T): ABSFuture[T] = ABSFuture.done(fn)
 
   def absVoidMethod(fn: => Unit): ABSFuture[Void] = {fn; ABSFuture.done}
+
+  def absVoidContinuation(fn: => Unit): Callable[ABSFuture[Void]] = () => {fn; ABSFuture.done}
+
+  def on(guard: => Boolean) = {
+    val supplier = new Supplier[java.lang.Boolean] {
+      override def get(): lang.Boolean = guard
+    }
+    new GuardHelper(Guard.convert(supplier))
+  }
+
+  def on(guard: Guard) = new GuardHelper(guard)
 
 }
 
@@ -15,7 +34,7 @@ object ABSFutureSugar {
   type VoidFuture = ABSFuture[Void]
 
   implicit class ABSFutureImplicit[V] (fut: ABSFuture[V]) {
-    def onSuccess[R](continuation: CallableGet[R, V])(implicit hostActor: LocalActor) =
+    def onSuccess[R](continuation: CallableGet[R, V])(implicit hostActor: LocalActor): ABSFuture[R] =
       hostActor.getSpawn(fut, continuation)
   }
 
