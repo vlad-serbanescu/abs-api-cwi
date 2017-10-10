@@ -16,3 +16,4 @@ hs_err_pid*
 /project/target
 /src/main/java/abs/api/cwi/AAC_2.ucls
 /AAC_1.ucls
+/.idea
