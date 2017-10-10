@@ -4,6 +4,20 @@ import java.lang
 import java.util.concurrent.Callable
 import java.util.function.Supplier
 
+
+
+
+trait TypedActor extends LocalActor {
+  trait MessageTrait[V] extends Callable[ABSFuture[V]]
+
+  def messageHandler[V](fn: => ABSFuture[V]) = new MessageTrait[V] {
+    override def call() = fn
+  }
+
+  def ![V] (message: MessageTrait[V]) = this.send(message)
+}
+
+
 abstract class SugaredActor extends LocalActor {
   implicit val hostActor: LocalActor = this
 

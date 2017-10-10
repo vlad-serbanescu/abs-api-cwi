@@ -1,42 +1,43 @@
 package awaittest
 
-import abs.api.cwi.{ABSFuture, SugaredActor}
+import abs.api.cwi.{SugaredActor, TypedActor}
 
-class AwaitTest extends SugaredActor {
-
+class AwaitTest extends SugaredActor with TypedActor {
   var x = false
   var y = false
 
-  override def init(): ABSFuture[Void] = absVoidMethod {
-    this.send(() => this.m1())
-    this.send(() => this.m2())
-  }
-
-  def m1() = absVoidMethod {
+  def m1() = messageHandler { absVoidMethod {
     x = true
-    on {!x} execute absVoidContinuation {
+    // when `x` becomes false, the following continuation will be enabled for execution
+    on {!x} execute absContinuation {
       y = true
       for (_ <- 1 to 1000000) {
         if (! y)
-          throw new RuntimeException("Actor did not wait properly.")
+          throw new RuntimeException("Actor has two parallel threads!")
       }
       println("Finished checking.")
     }
-  }
+  }}
 
-  def m2() = absVoidMethod {
+  def m2() = messageHandler { absVoidMethod {
     y = false
-    on {x} execute absVoidContinuation {
+    // when `x` becomes true, the following continuation will be enabled for execution
+    on {x} execute absContinuation {
       x = false
-      on {y} execute absVoidContinuation {
+      // when `y` becomes true, the following continuation will be enabled for execution
+      on {y} execute absContinuation {
         y = false
       }
     }
-  }
+  }}
 }
 
 object AwaitTestMain {
   def main(args: Array[String]): Unit = {
-    new AwaitTest
+    val a = new AwaitTest
+    import a._
+
+    a ! m1()
+    a ! m2()
   }
 }
