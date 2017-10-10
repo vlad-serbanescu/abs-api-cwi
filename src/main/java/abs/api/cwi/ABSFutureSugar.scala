@@ -8,13 +8,13 @@ import java.util.function.Supplier
 
 
 trait TypedActor extends LocalActor {
-  trait MessageTrait[V] extends Callable[ABSFuture[V]]
+  trait MessageHandler[V] extends Callable[ABSFuture[V]]
 
-  def messageHandler[V](fn: => ABSFuture[V]) = new MessageTrait[V] {
+  def messageHandler[V](fn: => ABSFuture[V]) = new MessageHandler[V] {
     override def call() = fn
   }
 
-  def ![V] (message: MessageTrait[V]) = this.send(message)
+  def ![V] (message: MessageHandler[V]) = this.send(message)
 }
 
 

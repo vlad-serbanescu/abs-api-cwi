@@ -1,19 +1,18 @@
 package NQueens.confNoLoadBalancing
 
-import abs.api.cwi.ABSFutureSugar.VoidFuture
-import abs.api.cwi._
 import NQueens.common.FastFunctions
 import abs.api.cwi.ABSFuture.done
+import abs.api.cwi._
 
-class Worker(var master: IMaster, var threshold: Int, var size: Int) extends LocalActor with IWorker {
+class Worker(val master: IMaster, var threshold: Int, var size: Int) extends LocalActor with IWorker {
 
   def sendWork(list: Array[Int], depth: Int, priorities: Int): Unit = {
     //    println(s"Work $depth")
     val worker = new Worker(master, threshold, size)
-    worker.send(() => worker.nqueensKernelPar(list, depth, priorities))
+    worker ! worker.nqueensKernelPar(list, depth, priorities)
   }
 
-  def nqueensKernelPar(board: Array[Int], depth: Int, priority: Int): VoidFuture = {
+  def nqueensKernelPar(board: Array[Int], depth: Int, priority: Int) = messageHandler {
     //    println(s"Par $depth $size $priority ${board.length}")
     if (size != depth) {
       if (depth >= threshold) {
@@ -35,7 +34,7 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
     } else {
       println("solution")
       board.foreach(print)
-      master.send(() => master.success(board))
+      master ! master.success(board)
     }
     done
   }
@@ -56,7 +55,7 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
         i += 1
       }
     } else {
-      master.send(() => master.success(board))
+      master ! master.success(board)
     }
     //    println(s"Seq $depth is done")
   }
