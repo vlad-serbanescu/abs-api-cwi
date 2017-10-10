@@ -2,6 +2,6 @@ package NQueens.coopNoLoadBalancing
 
 import abs.api.cwi._
 
-trait IMaster extends Actor {
-  def sendWork( list : Array[Int],  depth : Int,  priorities : Int): ABSFuture[List[Array[Int]]]
+trait IMaster extends TypedActor {
+  def sendWork(list : Array[Int],  depth : Int,  priorities : Int): MessageHandler[List[Array[Int]]]
 }

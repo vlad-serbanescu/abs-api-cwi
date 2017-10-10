@@ -5,8 +5,6 @@ import java.util.concurrent.Callable
 import java.util.function.Supplier
 
 
-
-
 trait TypedActor extends LocalActor {
   trait MessageHandler[V] extends Callable[ABSFuture[V]]
 

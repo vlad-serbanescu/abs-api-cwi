@@ -19,7 +19,7 @@ class Master(var numWorkers : Int,var priorities : Int,var solutionsLimit : Int,
     worker.send(() => worker.nqueensKernelPar(list, depth, priorities))
   }
 
-  override def init: ABSFuture[Void] = {
+  def init: ABSFuture[Void] = {
     println(s"COOP: Boardsize = ${size.toString}, number of solutions should be ${solutionsLimit.toString}")
     val inArray: Array[Int] = new Array[Int](0)
     this.send(() => this.sendWork(inArray, 0, priorities)) onSuccess (result => absVoidMethod {

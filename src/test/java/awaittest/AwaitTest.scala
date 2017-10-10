@@ -11,7 +11,8 @@ class AwaitTest extends SugaredActor with TypedActor {
     // when `x` becomes false, the following continuation will be enabled for execution
     on {!x} execute absContinuation {
       y = true
-      for (_ <- 1 to 1000000) {
+      for (_ <- 1 to 1000) {
+        Thread.sleep(1)
         if (! y)
           throw new RuntimeException("Actor has two parallel threads!")
       }

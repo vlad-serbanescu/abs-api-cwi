@@ -1,8 +1,6 @@
 package NQueens.confNoLoadBalancing
 
-import abs.api.cwi.ABSFutureSugar.VoidFuture
 import abs.api.cwi._
-import abs.api.cwi.ABSFuture.done
 
 
 class Master(var numWorkers : Int,var priorities : Int,var solutionsLimit : Int,var threshold : Int,var size : Int) extends SugaredActor with IMaster {
@@ -19,7 +17,6 @@ class Master(var numWorkers : Int,var priorities : Int,var solutionsLimit : Int,
         println("-------------------------------- Program successfully completed! in " + (System.currentTimeMillis() - t1))
         ActorSystem.shutdown()
       }
-
     }
   }
 

@@ -6,7 +6,7 @@ import abs.api.cwi._
 
 class Worker(val master: IMaster, var threshold: Int, var size: Int) extends LocalActor with IWorker {
 
-  def sendWork(list: Array[Int], depth: Int, priorities: Int): Unit = {
+  private def sendWork(list: Array[Int], depth: Int, priorities: Int): Unit = {
     //    println(s"Work $depth")
     val worker = new Worker(master, threshold, size)
     worker ! worker.nqueensKernelPar(list, depth, priorities)

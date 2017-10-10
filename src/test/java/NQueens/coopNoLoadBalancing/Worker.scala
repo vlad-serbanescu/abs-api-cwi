@@ -8,14 +8,15 @@ import abs.api.cwi.ABSFutureSugar._
 
 class Worker(var threshold: Int, var size: Int) extends SugaredActor with IWorker {
 
-  def sendWork(list: Array[Int], depth: Int, priorities: Int): ABSFuture[List[Array[Int]]] = {
-    //    println(s"Work $depth")
+  // This is not a message handler and is called synchronously
+  private def sendWork(list: Array[Int], depth: Int, priorities: Int): ABSFuture[List[Array[Int]]] = {
+        println(s"Work $depth")
     val worker = new Worker(threshold, size)
-    worker.send(() => worker.nqueensKernelPar(list, depth, priorities))
+    worker ! worker.nqueensKernelPar(list, depth, priorities)
   }
 
-  def nqueensKernelPar(board: Array[Int], depth: Int, priority: Int): ABSFuture[List[Array[Int]]] = {
-//    println(s"Par $depth $size $priority ${board.length} $this")
+  def nqueensKernelPar(board: Array[Int], depth: Int, priority: Int) = messageHandler {
+    println(s"Par $depth $size $priority ${board.length} $this")
     if (size != depth) {
       if (depth >= threshold) {
         done(this.nqueensKernelSeq(board, depth).toList)
@@ -40,7 +41,8 @@ class Worker(var threshold: Int, var size: Int) extends SugaredActor with IWorke
     }
   }
 
-  def nqueensKernelSeq(board: Array[Int], depth: Int): Vector[Array[Int]] = {
+  private def nqueensKernelSeq(board: Array[Int], depth: Int): Vector[Array[Int]] = {
+    println(s"Seq $depth $this")
     if (size == depth) {
       Vector(board)
     }
