@@ -17,6 +17,8 @@ abstract class SugaredActor extends LocalActor {
 
   def absVoidMethod(fn: => Unit): ABSFuture[Void] = {fn; ABSFuture.done}
 
+  def absContinuation[T](fn: => T): Callable[ABSFuture[T]] = () => ABSFuture.done(fn)
+
   def absVoidContinuation(fn: => Unit): Callable[ABSFuture[Void]] = () => {fn; ABSFuture.done}
 
   def on(guard: => Boolean) = {
