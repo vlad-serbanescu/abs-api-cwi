@@ -1,4 +1,4 @@
-package nqueenscoop
+package NQueens.nqueenscoop
 
 import abs.api.cwi._
 

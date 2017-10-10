@@ -1,4 +1,4 @@
-package common;
+package NQueens.common;
 
 public class FastFunctions {
     public static boolean boardValid(final int[] a, final int n) {

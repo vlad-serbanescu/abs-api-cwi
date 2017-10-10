@@ -1,9 +1,9 @@
-package coopNoLoadBalancing
+package NQueens.confNoLoadBalancing
 
 import abs.api.cwi._
 
 
-object MainCoop extends LocalActor {
+object Main extends LocalActor {
 
     def main(args: Array[String]): Unit = {
         // Init section: nqueens

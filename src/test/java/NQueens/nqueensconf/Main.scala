@@ -1,10 +1,7 @@
-package confNoLoadBalancing
-
-import abs.api.cwi._
+package NQueens.nqueensconf
 
 
-object Main extends LocalActor {
-
+object Main {
     def main(args: Array[String]): Unit = {
         // Init section: nqueens
         val numWorkers: Int = 4

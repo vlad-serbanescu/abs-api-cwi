@@ -1,4 +1,4 @@
-package coopNoLoadBalancing
+package NQueens.coopNoLoadBalancing
 
 import abs.api.cwi._
 

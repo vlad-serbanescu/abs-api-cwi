@@ -1,4 +1,4 @@
-package common
+package NQueens.common
 
 
 object Functions {

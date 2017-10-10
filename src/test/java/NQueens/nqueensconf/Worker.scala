@@ -1,20 +1,18 @@
-package confNoLoadBalancing
+package NQueens.nqueensconf
 
-import abs.api.cwi.ABSFutureSugar.VoidFuture
 import abs.api.cwi._
-import common.FastFunctions
+import NQueens.common.{FastFunctions, Functions}
 import abs.api.cwi.ABSFuture.done
+import abs.api.cwi.ABSFutureSugar.VoidFuture
+
 
 class Worker(var master: IMaster, var threshold: Int, var size: Int) extends LocalActor with IWorker {
-
-  def sendWork(list: Array[Int], depth: Int, priorities: Int): Unit = {
-    //    println(s"Work $depth")
-    val worker = new Worker(master, threshold, size)
-    worker.send(() => worker.nqueensKernelPar(list, depth, priorities))
+  {
+    println("Worker started")
   }
 
   def nqueensKernelPar(board: Array[Int], depth: Int, priority: Int): VoidFuture = {
-    //    println(s"Par $depth $size $priority ${board.length}")
+//    println(s"Par $depth $size $priority ${board.length}")
     if (size != depth) {
       if (depth >= threshold) {
         this.nqueensKernelSeq(board, depth)
@@ -26,8 +24,8 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
           val b: Array[Int] = new Array[Int](newDepth)
           System.arraycopy(board, 0, b, 0, depth)
           b(depth) = i
-          if (FastFunctions.boardValid(b, newDepth)) {
-            this.sendWork(b, newDepth, priority - 1)
+          if (FastFunctions.boardValid(b,newDepth)) {
+            master.send(() => master.sendWork(b, newDepth, priority - 1))
           }
           i += 1
         }
@@ -42,7 +40,7 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
 
   // internal method called only sequentially
   private def nqueensKernelSeq(board: Array[Int], depth: Int): Unit = {
-    //    println(s"Seq $depth")
+//    println(s"Seq $depth")
     if (size != depth) {
       val b: Array[Int] = new Array[Int](depth + 1)
 
@@ -58,6 +56,7 @@ class Worker(var master: IMaster, var threshold: Int, var size: Int) extends Loc
     } else {
       master.send(() => master.success(board))
     }
-    //    println(s"Seq $depth is done")
+//    println(s"Seq $depth is done")
   }
 }
+

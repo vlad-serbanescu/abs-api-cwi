@@ -1,8 +1,8 @@
-package nqueenscoop
+package NQueens.nqueenscoop
 
 import abs.api.cwi.ABSFutureSugar._
 import abs.api.cwi._
-import common.FastFunctions
+import NQueens.common.FastFunctions
 import abs.api.cwi.ABSFuture.done
 
 

@@ -1,7 +1,7 @@
-package coopNoLoadBalancing
+package NQueens.coopNoLoadBalancing
 
 import abs.api.cwi._
-import common.FastFunctions
+import NQueens.common.FastFunctions
 import abs.api.cwi.ABSFuture.done
 import abs.api.cwi.ABSFutureSugar._
 

@@ -1,4 +1,4 @@
-package confNoLoadBalancing
+package NQueens.confNoLoadBalancing
 
 import abs.api.cwi.ABSFutureSugar.VoidFuture
 import abs.api.cwi._

@@ -1,4 +1,4 @@
-package nqueensconf
+package NQueens.nqueensconf
 
 import java.util.Objects
 

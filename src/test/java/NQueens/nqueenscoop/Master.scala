@@ -1,4 +1,4 @@
-package nqueenscoop
+package NQueens.nqueenscoop
 
 import abs.api.cwi._
 import abs.api.cwi.ABSFutureSugar._

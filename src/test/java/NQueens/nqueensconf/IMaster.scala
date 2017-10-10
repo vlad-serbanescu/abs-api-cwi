@@ -1,4 +1,4 @@
-package nqueensconf
+package NQueens.nqueensconf
 
 import abs.api.cwi.ABSFutureSugar.VoidFuture
 import abs.api.cwi._
