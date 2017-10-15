@@ -9,26 +9,36 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ActorSystem {
-	/** The main executor. */
-	private static ExecutorService mainExecutor = Executors.newFixedThreadPool(10);
+    /**
+     * The main executor.
+     */
+    private static ExecutorService mainExecutor = Executors.newFixedThreadPool(10);
 
     private static AtomicInteger symbolicTime = new AtomicInteger(0);
 
+    private static AtomicInteger runningActors = new AtomicInteger(0);
 
-    private ActorSystem() { }
 
-	static void submit(Runnable task) {
-		mainExecutor.submit(task);
-	}
+    private ActorSystem() {
+    }
 
-	static void advanceTime(){
+    static void submit(Runnable task) {
+        //runningActors.incrementAndGet();
+        mainExecutor.submit(task);
+    }
+
+    static void done() {
+        if (runningActors.decrementAndGet() == 0)
+            advanceTime();
+    }
+
+    static void advanceTime() {
         symbolicTime.incrementAndGet();
     }
 
-	public static void shutdown() {
-		mainExecutor.shutdown();
-	}
-
+    public static void shutdown() {
+        mainExecutor.shutdown();
+    }
 
 
 }
