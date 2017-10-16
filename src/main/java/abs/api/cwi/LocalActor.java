@@ -31,7 +31,10 @@ class AbsKey implements Comparable<AbsKey> {
 
 public abstract class LocalActor implements Actor {
 	private ABSTask<?> runningMessage;
-	private final AtomicBoolean mainTaskIsRunning;
+
+
+
+    private AtomicBoolean mainTaskIsRunning = new AtomicBoolean(false);
 	private ConcurrentSkipListMap<AbsKey, ConcurrentLinkedQueue<ABSTask<?>>> messageQueue = new ConcurrentSkipListMap<>();
 
 	private class MainTask implements Runnable {
@@ -42,15 +45,6 @@ public abstract class LocalActor implements Actor {
 				ActorSystem.submit(this);  // instead of a loop we submit again, thus allowing other actors' tasks to get a chance of being scheduled in the meantime
 			}
 		}
-	}
-
-	public LocalActor(){
-		mainTaskIsRunning = new AtomicBoolean(false);
-	}
-
-	public LocalActor(AtomicBoolean mainTaskIsRunning){
-		this.mainTaskIsRunning = mainTaskIsRunning;
-
 	}
 
 	private boolean takeOrDie() {
@@ -129,5 +123,10 @@ public abstract class LocalActor implements Actor {
 		schedule(m, priority, strict);
 		return m.getResultFuture();
 	}
+
+    public void moveToCOG(LocalActor dest) {
+        this.mainTaskIsRunning = dest.mainTaskIsRunning;
+        this.messageQueue = dest.messageQueue;
+    }
 
 }
