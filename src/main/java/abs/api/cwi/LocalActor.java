@@ -62,10 +62,14 @@ public abstract class LocalActor implements Actor {
 				if (!bucket.isEmpty() && key.isStrict()) {
 					// when there are disabled tasks in strict bucket, we cannot execute a lower priority task
 					mainTaskIsRunning.set(false);
+					//RT: Notify system that this actor cannot run anymore tasks.
+					//TimedActorSystem.done();
 					return false;
 				}
 			}
 			mainTaskIsRunning.set(false);
+			//RT: Notify system that this actor cannot run anymore tasks.
+			//TimedActorSystem.done();
 			return false;
 		}
 	}
