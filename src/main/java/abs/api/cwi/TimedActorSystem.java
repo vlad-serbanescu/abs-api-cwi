@@ -15,7 +15,7 @@ public class TimedActorSystem extends ActorSystem {
 
 
     static int now() {
-        return symbolicTime.incrementAndGet();
+        return symbolicTime.get();
     }
 
     static void done() {
@@ -57,4 +57,13 @@ public class TimedActorSystem extends ActorSystem {
     static void advanceTime(int x) {
         symbolicTime.addAndGet(x);
     }
+
+    static void submit(Runnable task) {
+        mainExecutor.submit(task);
+    }
+
+    static void start(){
+        runningActors.incrementAndGet();
+    }
+
 }
