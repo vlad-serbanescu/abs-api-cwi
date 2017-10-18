@@ -1,5 +1,6 @@
 package abs.api.cwi;
 
+import java.sql.Time;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -42,7 +43,7 @@ public abstract class LocalActor implements Actor {
 		public void run() {
 			if (takeOrDie()) {
 				runningMessage.run();
-				ActorSystem.submit(this);  // instead of a loop we submit again, thus allowing other actors' tasks to get a chance of being scheduled in the meantime
+				TimedActorSystem.submit(this);  // instead of a loop we submit again, thus allowing other actors' tasks to get a chance of being scheduled in the meantime
 			}
 		}
 	}
@@ -63,20 +64,20 @@ public abstract class LocalActor implements Actor {
 					// when there are disabled tasks in strict bucket, we cannot execute a lower priority task
 					mainTaskIsRunning.set(false);
 					//RT: Notify system that this actor cannot run anymore tasks.
-					//TimedActorSystem.done();
+					TimedActorSystem.done();
 					return false;
 				}
 			}
 			mainTaskIsRunning.set(false);
 			//RT: Notify system that this actor cannot run anymore tasks.
-			//TimedActorSystem.done();
+			TimedActorSystem.done();
 			return false;
 		}
 	}
 
 	private boolean notRunningThenStart() {
 		synchronized (mainTaskIsRunning) {
-			return mainTaskIsRunning.compareAndSet(false, true);
+            return mainTaskIsRunning.compareAndSet(false, true);
 		}
 	}
 
@@ -100,7 +101,8 @@ public abstract class LocalActor implements Actor {
 		ABSTask<V> m = new ABSTask<>(message);
 		schedule(m, DEFAULT_PRIORITY, NON_STRICT);
 		if (notRunningThenStart()) {
-			ActorSystem.submit(new MainTask());
+		    TimedActorSystem.start();
+			TimedActorSystem.submit(new MainTask());
 		}
 		return m.getResultFuture();
 	}
