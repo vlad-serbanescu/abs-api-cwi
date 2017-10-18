@@ -66,4 +66,12 @@ object Functions {
     readLine();
   }
 
+  def currentms(): Double= {
+    TimedActorSystem.now();
+  }
+
+  def lowlevelDeadline(): Double = {
+    return 0;
+  }
+
 }

@@ -12,7 +12,7 @@ public class ActorSystem {
     /**
      * The main executor.
      */
-    private static ExecutorService mainExecutor = Executors.newFixedThreadPool(10);
+    protected static ExecutorService mainExecutor = Executors.newFixedThreadPool(10);
 
 
     protected ActorSystem() {

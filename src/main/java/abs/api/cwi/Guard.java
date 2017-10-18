@@ -14,6 +14,9 @@ public abstract class Guard {
 			return new PureExpressionGuard((Supplier<Boolean>) o);
 		} else if (o instanceof ABSFuture) {
 			return new FutureGuard((ABSFuture) o);
+		} else if (o instanceof int[]) {
+			int[] x = (int[]) o;
+			return new DurationGuard(x[0],x[1]);
 		} else if (o instanceof Guard) {
 			return (Guard) o;
 		} else {
