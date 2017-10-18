@@ -1,35 +1,22 @@
 package abs.api.cwi;
 
-import java.net.URI;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.function.Supplier;
 
 public interface Actor {
+	boolean STRICT = true;
+	boolean NON_STRICT = false;
+	int DEFAULT_PRIORITY = 0;
+	int HIGH_PRIORITY = 1;
 
-	public  <V> ABSFuture<V> send(Runnable message);
+	<V> ABSFuture<V> send(Callable<ABSFuture<V>> message);
+	<V> ABSFuture<V> spawn(Guard guard, Callable<ABSFuture<V>> message);
+	<T,V> ABSFuture<T> getSpawn(ABSFuture<V> f, CallableGet<T, V> message, int priority, boolean strict);
 
-	public  <V> ABSFuture<V> send(Callable<V> message);
+	default <T, V> ABSFuture<T> getSpawn(ABSFuture<V> f, CallableGet<T, V> message) {
+		return getSpawn(f, message, DEFAULT_PRIORITY, NON_STRICT);
+	}
 
-	public  <T> T await(Supplier<Boolean> s, Callable<T> message);
-
-	public  <T> T await(Future<?> s, Callable<T> message);
-
-	public  <T> T await(Supplier<Boolean> s, Runnable message);
-
-	public  <T> T await(Future<?> s, Runnable message);
-
-	public  <T> T awaitRep(Supplier<Boolean> repCondition, Runnable before, Runnable after, Callable<T> end,
-			Supplier<Future<?>> s);
-
-	public  <T> T awaitRep(Supplier<Boolean> repCondition, Supplier<Boolean> s, Runnable before, Runnable after,
-			Callable<T> end);
-
-	public <T> T await(URI futureID, Runnable message) ;
-
-	public <T> T await(URI futureID, Callable<T> message) ;
-
-	public <T> T get(URI futureID) ;
+	default int compare(Actor o) {
+		return 0;
+	}
 }

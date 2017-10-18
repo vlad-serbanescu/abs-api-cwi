@@ -1,239 +1,124 @@
 package abs.api.cwi;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 
-public class LocalActor extends AbstractActor {
+import static abs.api.cwi.ABSTask.emptyTask;
 
-	// Semaphore s;
-	private AtomicBoolean executorIsRunning = new AtomicBoolean(false);
-	protected ConcurrentLinkedQueue<ABSFuture<?>> messageQueue;
-	public ConcurrentHashMap<Future<?>, Set<ABSFuture<?>>> futureContinuations;
-	public ConcurrentHashMap<Supplier<Boolean>, Set<ABSFuture<?>>> conditionContinuations;
+class AbsKey implements Comparable<AbsKey> {
+	private int priority;
+	private int strict;
 
-	protected ABSFuture<?> possibleAwait = null;
-	protected boolean completedMessage = true;
-
-	public LocalActor() {
+	public AbsKey(int priority, boolean strict) {
 		super();
-		messageQueue = new ConcurrentLinkedQueue<ABSFuture<?>>();
-		if (localActorMap == null) {
-			localActorMap = new ConcurrentSkipListSet<LocalActor>();
-		}
-
-		localActorMap.add(this);
-
+		this.priority = priority;
+		this.strict = strict ? 1 : 0;
 	}
 
-	private boolean isEmptyAndDie() {
-		synchronized (executorIsRunning) {
-			if (messageQueue.isEmpty()) {
-				executorIsRunning.set(false);
-				return true;
-			} else
-				return false;
-		}
-	}
-	
-	private boolean notEmptyAndStart() {
-		synchronized (executorIsRunning) {
-			return executorIsRunning.compareAndSet(false, true);
-		}
-	}	
-	
+	boolean isStrict() { return strict == 1;}
 
 	@Override
-	public <V> ABSFuture<V> send(Runnable message) {
-		ABSFuture<V> m = new ABSFuture<V>(message, IS_REACHABLE, hostName);
-		 send(m);
-		 return m;
+	public int compareTo(AbsKey o) {
+		// In ascending order, we should get the highest priority/strictness first
+		if (o.priority == priority) {
+			return o.strict - this.strict;
+		} else
+			return o.priority - this.priority;
+	}
+}
+
+public abstract class LocalActor implements Actor {
+	private ABSTask<?> runningMessage;
+	private final AtomicBoolean mainTaskIsRunning = new AtomicBoolean(false);
+	private ConcurrentSkipListMap<AbsKey, ConcurrentLinkedQueue<ABSTask<?>>> messageQueue = new ConcurrentSkipListMap<>();
+
+	private class MainTask implements Runnable {
+		@Override
+		public void run() {
+			if (takeOrDie()) {
+				runningMessage.run();
+				ActorSystem.submit(this);  // instead of a loop we submit again, thus allowing other actors' tasks to get a chance of being scheduled in the meantime
+			}
+		}
 	}
 
-	@Override
-	public <V> ABSFuture<V> send(Callable<V> message) {
-		ABSFuture<V> m = new ABSFuture<V>(message, IS_REACHABLE, hostName);
-		 send(m);
-		 return m;
-
-	}
-
-	protected <V> void send(ABSFuture<V> messageArgument) {
-		messageQueue.add(messageArgument);
-		
-		if (notEmptyAndStart()) {
-			new Thread(new Runnable() {
-
-				public void run() {
-					while (!isEmptyAndDie()) {
-						ABSFuture<?> m;
-						m = messageQueue.poll();
-						m.runningF.run();
-						if (!completedMessage) {
-							possibleAwait.setF(m.f);
-							completedMessage = true;
-						} else {
-							m.finished();
-							releaseAll(m);
-						}
+	private boolean takeOrDie() {
+		synchronized (mainTaskIsRunning) {
+			// this synchronized block is to remove the race condition between checking if nothing is there to be executed and resetting the flag mainTaskIsRunning
+			for (AbsKey key : messageQueue.keySet()) {
+				ConcurrentLinkedQueue<ABSTask<?>> bucket = messageQueue.get(key);
+				for (ABSTask<?> absTask : bucket) {
+					if (absTask.evaluateGuard()) {
+						runningMessage = absTask;
+						bucket.remove(absTask);
+						return true;
 					}
 				}
-			}).start();
-		}
-	}
-
-	@Override
-	public <T> T await(Supplier<Boolean> s, Callable<T> message) {
-		ABSFuture<T> m = new ABSFuture<T>(message, IS_REACHABLE, hostName);
-		return await(s, m);
-	}
-
-	@Override
-	public <T> T await(Future<?> s, Callable<T> message) {
-		ABSFuture<T> m = new ABSFuture<T>(message, IS_REACHABLE, hostName);
-		return await(s, m);
-
-	}
-
-	@Override
-	public <T> T await(Supplier<Boolean> s, Runnable message) {
-		ABSFuture<T> m = new ABSFuture<T>(message, IS_REACHABLE, hostName);
-		return await(s, m);
-
-	}
-
-	@Override
-	public <T> T await(Future<?> s, Runnable message) {
-		ABSFuture<T> m = new ABSFuture<T>(message, IS_REACHABLE, hostName);
-		return await(s, m);
-
-	}
-
-	private <T> T await(Supplier<Boolean> s, ABSFuture<T> m) {
-		if (s.get() == true) {
-			m.runningF.run();
-			try {
-				return m.runningF.get();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-				return null;
-			} catch (ExecutionException e) {
-				e.printStackTrace();
-				return null;
-			}
-		} else {
-			if (conditionContinuations == null)
-				conditionContinuations = new ConcurrentHashMap<Supplier<Boolean>, Set<ABSFuture<?>>>();
-
-			if (conditionContinuations.containsKey(s))
-				conditionContinuations.get(s).add(m);
-			else {
-				Set<ABSFuture<?>> continuations = new HashSet<ABSFuture<?>>();
-				continuations.add(m);
-				conditionContinuations.put(s, continuations);
-			}
-			possibleAwait = m;
-			completedMessage = false;
-			return null;
-		}
-	}
-
-	private <T> T await(Future<?> s, ABSFuture<T> m) {
-		if (s.isDone()) {
-			m.runningF.run();
-			try {
-				return m.runningF.get();
-			} catch (InterruptedException e) {
-
-				e.printStackTrace();
-				return null;
-			} catch (ExecutionException e) {
-				e.printStackTrace();
-				return null;
-			}
-		} else {
-			if (futureContinuations == null) {
-				futureContinuations = new ConcurrentHashMap<Future<?>, Set<ABSFuture<?>>>();
-			}
-
-			if (futureContinuations.containsKey(s))
-				futureContinuations.get(s).add(m);
-			else {
-				Set<ABSFuture<?>> continuations = new HashSet<ABSFuture<?>>();
-				continuations.add(m);
-				futureContinuations.put(s, continuations);
-			}
-			possibleAwait = m;
-			completedMessage = false;
-			return null;
-		}
-	}
-
-	@Override
-	public <T> T awaitRep(Supplier<Boolean> repCondition, Runnable before, Runnable after, Callable<T> end,
-			Supplier<Future<?>> s) {
-		Future<?> toHold = s.get();
-		if (toHold.isDone()) {
-			if (repCondition.get() == true) {
-				before.run();
-				after.run();
-				return awaitRep(repCondition, before, after, end, s);
-			} else {
-				try {
-					return end.call();
-				} catch (Exception e) {
-					e.printStackTrace();
-					return null;
+				if (!bucket.isEmpty() && key.isStrict()) {
+					// when there are disabled tasks in strict bucket, we cannot execute a lower priority task
+					mainTaskIsRunning.set(false);
+					return false;
 				}
 			}
+			mainTaskIsRunning.set(false);
+			return false;
+		}
+	}
 
+	private boolean notRunningThenStart() {
+		synchronized (mainTaskIsRunning) {
+			return mainTaskIsRunning.compareAndSet(false, true);
+		}
+	}
+
+	private <V> void schedule(ABSTask<V> messageArgument, int priority, boolean strict) {
+		if (emptyTask.equals(messageArgument.task)) {
+			return;
+		}
+
+		AbsKey key = new AbsKey(priority, strict);
+		if (messageQueue.containsKey(key)) {
+			messageQueue.get(key).add(messageArgument);
 		} else {
-			Callable<T> loopContinuation = (Callable<T>) (() -> {
-				after.run();
-				if (repCondition.get() == true)
-					return awaitRep(repCondition, before, after, end, s);
-				else
-					return end.call();
-			});
-			before.run();
-			return await(toHold, loopContinuation);
+			ConcurrentLinkedQueue<ABSTask<?>> bucket = new ConcurrentLinkedQueue<>();
+			bucket.add(messageArgument);
+			messageQueue.put(key, bucket);
 		}
 	}
 
 	@Override
-	public <T> T awaitRep(Supplier<Boolean> repCondition, Supplier<Boolean> s, Runnable beforeAwait,
-			Runnable afterAwait, Callable<T> end) {
-		if (s.get() == true) {
-			if (repCondition.get() == true) {
-				beforeAwait.run();
-				afterAwait.run();
-				return awaitRep(repCondition, s, beforeAwait, afterAwait, end);
-			} else {
-				try {
-					return end.call();
-				} catch (Exception e) {
-					e.printStackTrace();
-					return null;
-				}
-			}
-
-		} else {
-			Callable<T> loopContinuation = (Callable<T>) (() -> {
-				afterAwait.run();
-				if (repCondition.get() == true)
-					return awaitRep(repCondition, s, beforeAwait, afterAwait, end);
-				else
-					return end.call();
-			});
-			beforeAwait.run();
-			return await(s, loopContinuation);
+	public final <V> ABSFuture<V> send(Callable<ABSFuture<V>> message) {
+		ABSTask<V> m = new ABSTask<>(message);
+		schedule(m, DEFAULT_PRIORITY, NON_STRICT);
+		if (notRunningThenStart()) {
+			ActorSystem.submit(new MainTask());
 		}
+		return m.getResultFuture();
 	}
+
+	@Override
+	public final <V> ABSFuture<V> spawn(Guard guard, Callable<ABSFuture<V>> message) {
+		ABSTask<V> m = new ABSTask<>(message, guard);
+		guard.addFuture(this);
+		schedule(m, DEFAULT_PRIORITY, NON_STRICT);
+		return m.getResultFuture();
+	}
+
+	// Just make the super implementation final
+	@Override
+	public final <T, V> ABSFuture<T> getSpawn(ABSFuture<V> f, CallableGet<T, V> message) {
+		return Actor.super.getSpawn(f, message);
+	}
+
+	@Override
+	public final <T, V> ABSFuture<T> getSpawn(ABSFuture<V> f, CallableGet<T, V> message, int priority, boolean strict) {
+		Guard guard = Guard.convert(f);
+		ABSTask<T> m = new ABSTask<>(() -> message.run(f.getOrNull()), guard);
+		guard.addFuture(this);
+		schedule(m, priority, strict);
+		return m.getResultFuture();
+	}
+
 }

@@ -286,7 +286,7 @@ public static <E> E get(List<E> list, int index) {
  * Returns element 'n' of list 'list'.
  */
 
-public static <E> E without(List<E> list, Integer index) {
+public static <E> E nth(List<E> list, Integer index) {
 	  return list.get(index);
 	}
 
@@ -484,7 +484,7 @@ public static <K, V> Map<K, V> put(Map<K, V> map, K key, V value) {
  * Creates a new {@link Pair}.
  * 
  * @param key the first element
- * @param value the second element
+ * @param done the second element
  * @return an instance of {@link Pair}
  * @deprecated Try to use {@link #pair(Object, Object)} which
  *             uses standard Java's {@link Entry}.
@@ -538,7 +538,7 @@ public static <K, V> Map<K, V> removeKey(Map<K, V> map, K key) {
 }
 
 public static <K, V, C extends Collection<K>> C keys(Map<K, V> map) {
-  return (C) map.keySet();
+  return (C) new HashSet<>(map.keySet());
 }
 
 public static <K, V> Collection<V> values(Map<K, V> map) {
@@ -578,6 +578,8 @@ public static String toString(Object o) {
 public static String concatenate(String s1, String s2) {
   return new StringBuilder().append(s1).append(s2).toString();
 }
+
+
 //
 // --- I/O
 
@@ -598,7 +600,7 @@ public static void print(Object o) {
  * method with <code>GREEN</code> and <code>RED</code> color
  * support on ANSI terminal. Use with caution.
  * 
- * @param bool the value
+ * @param bool the done
  */
 public static void println(final boolean bool) {
   if (bool) {
