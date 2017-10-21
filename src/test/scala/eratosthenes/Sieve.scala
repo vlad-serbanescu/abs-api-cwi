@@ -11,12 +11,14 @@ class Sieve(prime: Int) extends SugaredActor with TypedActor {
   def divide(toDivide: Int): MessageHandler[(Int, Boolean)] = messageHandler {
     if (toDivide % prime == 0) {
       done(toDivide -> false)
-    } else if (next isEmpty) {
-      next = Some(new Sieve(toDivide))
-      done(toDivide -> true)
     } else {
-      val nextPrime = next.get
-      nextPrime ! nextPrime.divide(toDivide)
+      next match {
+        case None =>
+          next = Some(new Sieve(toDivide))
+          done(toDivide -> true)
+        case Some(nextPrime) =>
+          nextPrime ! nextPrime.divide(toDivide)
+      }
     }
   }
 }
