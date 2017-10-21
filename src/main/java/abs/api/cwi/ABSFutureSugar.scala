@@ -12,18 +12,22 @@ trait TypedActor extends LocalActor {
     override def call() = fn
   }
 
-  def ![V] (message: MessageHandler[V]) = this.send(message)
+  def ![V] (message: MessageHandler[V]): ABSFuture[V] = this.send(message)
 }
 
-
-abstract class SugaredActor extends LocalActor {
-  implicit val hostActor: LocalActor = this
-
-  class GuardHelper private[SugaredActor] (g: Guard) {
-    def execute[T](continuation: Callable[ABSFuture[T]]): ABSFuture[T] = {
+object SugaredActor {
+  // using a value class for less runtime overhead
+  class GuardHelper private[SugaredActor] (val g: Guard) extends AnyVal {
+    def execute[T](continuation: Callable[ABSFuture[T]])(implicit hostActor: LocalActor): ABSFuture[T] = {
       hostActor.spawn(g, continuation)
     }
   }
+}
+
+abstract class SugaredActor extends LocalActor {
+  import SugaredActor._
+
+  implicit val hostActor: LocalActor = this
 
   def absMethod[T](fn: => T): ABSFuture[T] = ABSFuture.done(fn)
 
@@ -41,13 +45,13 @@ abstract class SugaredActor extends LocalActor {
   }
 
   def on(guard: Guard) = new GuardHelper(guard)
-
 }
 
 object ABSFutureSugar {
   type VoidFuture = ABSFuture[Void]
 
-  implicit class ABSFutureImplicit[V] (fut: ABSFuture[V]) {
+  // using a value class for less runtime overhead
+  implicit class ABSFutureImplicit[V] (val fut: ABSFuture[V]) extends AnyVal {
     def onSuccess[R](continuation: CallableGet[R, V])(implicit hostActor: LocalActor): ABSFuture[R] =
       hostActor.getSpawn(fut, continuation)
   }
