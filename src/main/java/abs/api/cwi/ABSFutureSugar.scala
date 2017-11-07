@@ -5,14 +5,20 @@ import java.util.concurrent.Callable
 import java.util.function.Supplier
 
 
-trait TypedActor extends LocalActor {
-  trait MessageHandler[V] extends Callable[ABSFuture[V]]
+object TypedActor {
+  trait MessageHandler[P <: TypedActor[P], V] extends Callable[ABSFuture[V]]
+}
 
-  def messageHandler[V](fn: => ABSFuture[V]) = new MessageHandler[V] {
+trait TypedActor[A <: TypedActor[A]] extends LocalActor {
+  self: A =>
+  import TypedActor._
+  type Message[V] = MessageHandler[A, V]
+
+  def messageHandler[V](fn: => ABSFuture[V]) = new MessageHandler[A, V] {
     override def call() = fn
   }
 
-  def ![V] (message: MessageHandler[V]): ABSFuture[V] = this.send(message)
+  def ![V] (message: MessageHandler[A, V]): ABSFuture[V] = this.send(message)
 }
 
 object SugaredActor {
