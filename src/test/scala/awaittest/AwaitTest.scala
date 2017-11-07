@@ -2,7 +2,7 @@ package awaittest
 
 import abs.api.cwi.{SugaredActor, TypedActor}
 
-class AwaitTest extends SugaredActor with TypedActor {
+class AwaitTest extends SugaredActor with TypedActor[AwaitTest] {
   var x = false
   var y = false
 
