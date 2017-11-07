@@ -3,7 +3,7 @@ package awaittest
 import abs.api.cwi.{ActorSystem, SugaredActor, TypedActor}
 import abs.api.cwi.ABSFuture.done
 
-class FutureAwaitTest extends SugaredActor with TypedActor {
+class FutureAwaitTest extends SugaredActor with TypedActor[FutureAwaitTest] {
   def m1 = messageHandler {
     this ! m2
   }
