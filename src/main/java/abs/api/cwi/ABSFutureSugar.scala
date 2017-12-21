@@ -80,9 +80,16 @@ object ABSFutureSugar {
       hostActor.getSpawn(fut, continuation)
   }
 
+  // using a value class for less runtime overhead
+  implicit class ABSFutureIterableImplicit[V](val futList: Iterable[ABSFuture[V]]) extends AnyVal {
+    def onSuccessAll[R](continuation: CallableGet[R, List[V]])(implicit hostActor: LocalActor): ABSFuture[R] =
+      hostActor.getSpawn(sequence(futList), continuation)
+  }
+
   def sequence[R](futures: Iterable[ABSFuture[R]]): ABSFuture[List[R]] = {
     new ABSFuture[List[R]] with Actor {
       private var completed = false
+
       override def awaiting(actor: Actor): Unit = {
         super.awaiting(actor)
         futures.foreach(_.awaiting(this))

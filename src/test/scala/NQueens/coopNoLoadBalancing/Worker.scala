@@ -5,12 +5,11 @@ import NQueens.common.FastFunctions
 import abs.api.cwi.ABSFuture.done
 import abs.api.cwi.ABSFutureSugar._
 
-
 class Worker(var threshold: Int, var size: Int) extends SugaredActor with IWorker {
 
   // This is not a message handler and is called synchronously
   private def sendWork(list: Array[Int], depth: Int, priorities: Int): ABSFuture[List[Array[Int]]] = {
-        println(s"Work $depth")
+    println(s"Work $depth $this")
     val worker = new Worker(threshold, size)
     worker ! worker.nqueensKernelPar(list, depth, priorities)
   }
@@ -34,7 +33,10 @@ class Worker(var threshold: Int, var size: Int) extends SugaredActor with IWorke
           }
           i += 1
         }
-        sequence(futures) onSuccess (list => done(list.flatten))
+        futures onSuccessAll (list => {
+                                // println(s"onSuccessAll: ${list.size} $this")
+                                done(list.flatten)
+                              })
       }
     } else {
       done(List(board))
@@ -42,11 +44,10 @@ class Worker(var threshold: Int, var size: Int) extends SugaredActor with IWorke
   }
 
   private def nqueensKernelSeq(board: Array[Int], depth: Int): Vector[Array[Int]] = {
-    println(s"Seq $depth $this")
+//    println(s"Seq $depth $this")
     if (size == depth) {
       Vector(board)
-    }
-    else {
+    } else {
       var result = Vector[Array[Int]]()
       val b: Array[Int] = new Array[Int](depth + 1)
 

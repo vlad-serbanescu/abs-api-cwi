@@ -1,9 +1,6 @@
 package abs.api.cwi;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
@@ -37,22 +34,42 @@ public class ABSFuture<V> {
         return new SequencedABSFuture<>(futures);
     }
 
+    /**
+     * This method registers an actor such that it will be notified when this future is complete.
+     */
     void awaiting(Actor actor){
+        this.awaiting(Collections.singleton(actor));
+    }
+
+    private void awaiting(Collection<Actor> actors){
         if (target == null) {
-            // in the meantime another thread may set the target, so below code is not "else"
-            awaitingActors.add(actor);
+            awaitingActors.addAll(actors);
+            if (completed) {
+                notifyDependant();
+            }
         }
+        // in the meantime another thread may set the target, so below code is not "else"
         if (target != null) {
-            target.awaiting(actor);
+            target.awaiting(actors);
+            if (target.isDone()) {
+                notifyDependant();
+            }
         }
     }
 
+    /**
+     * Upon calling this method, the completion of this future will be delegated to the target future.
+     * It means that afterwards, this future's complete method shall never be called anymore. Instead,
+     * it propagates its list of waiting actors to target, who will directly notify them upon completion.
+     * In case target is already completed before this method registers its own awaiting actors, it will
+     * notify them directly.
+     */
     void forward(ABSFuture<V> target) {
         assert this.target == null;
         this.target = target;
         // First register as dependant then check for completion.
         // This might lead to double notification in some corner cases but doesn't miss any
-        awaitingActors.forEach(target::awaiting);
+        target.awaiting(awaitingActors);
         if (target.isDone()) {
             notifyDependant();
         }
