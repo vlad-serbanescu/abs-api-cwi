@@ -26,10 +26,10 @@ object DsolMain extends SugaredActor {
     val trains = (1 to nTrains) map { i =>
       Train(
         space = 10,
-        availableSince = (i + 1) / 2,
+        availableSince = (i + 5) / 5,
         availableUntil = 2 * i + 1,
-        budget = 1000 + 5 * i,
-        riskFactor = i * 0.05 + .50
+        budget = 1000 * Math.random() + 5 * i,
+        riskFactor = i * 0.05 + Math.random()
       )
     }
     val containers = (1 to nContainers) map { i =>
@@ -37,8 +37,8 @@ object DsolMain extends SugaredActor {
         arrival = (i + 1) / 20,
         deadline = (2 * i) / 10,
         destination = if (Math.random() > .5) Some(Munich) else Some(Duisburg),
-        budget = 100 + 5 * 10,
-        riskFactor = i * 0.05 + .50
+        budget = 100 * Math.random() + 5 * 10,
+        riskFactor = i * 0.05 + Math.random()
       )
     }
     val organizer = new AuctionOrganizer(trains.toList, containers.toList)
