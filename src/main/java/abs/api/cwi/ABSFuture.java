@@ -77,7 +77,7 @@ public class ABSFuture<V> {
         return (target == null) ? this.completed : target.isDone();
     }
 
-    V getOrNull() {
+    public V getOrNull() {
         return (target == null) ? this.value : target.getOrNull();
     }
 }

@@ -131,8 +131,10 @@ public abstract class LocalActor implements Actor {
 	}
 
     public void moveToCOG(LocalActor dest) {
-        this.mainTaskIsRunning = dest.mainTaskIsRunning;
-        this.messageQueue = dest.messageQueue;
+		if(dest!=null) {
+			this.mainTaskIsRunning = dest.mainTaskIsRunning;
+			this.messageQueue = dest.messageQueue;
+		}
     }
 
 }
