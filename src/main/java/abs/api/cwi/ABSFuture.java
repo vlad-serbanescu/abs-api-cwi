@@ -6,7 +6,20 @@ import java.util.stream.Collectors;
 
 import static abs.api.cwi.ABSTask.emptyTask;
 
-
+/**
+ * A Future can be seen as a reference to an asynchronous computation, that may or may not result in a value returned.
+ * As such, a piece of computation may delegate its completion to another async computation; this feature is implemented
+ * in the {@code forward} method.
+ * Thus, the main action on a future is to check the execution and completion of the asynchronous computation.
+ * If there is any result (determined by the generic type {@code V}), the value can be retrieved and used using
+ * continuation constructs available.
+ *
+ * Since futures can be passed around, or forwarded (in the sense explained above), there can be multiple actors that
+ * await completion of a future. This code is designed in such a way that the actors need not poll a future for its
+ * completion; rather, the future retains a list of all awaiting actors and notifies them upon completion. Thus, the
+ * internal implementation of an actor is simplified such that whenever an actor has no active work to do an is solely
+ * awaiting completion of futures, the actor can free its thread and (so to speak) go to sleep.
+ */
 public class ABSFuture<V> {
     private V value = null;
     private ABSFuture<V> target = null;
@@ -43,7 +56,7 @@ public class ABSFuture<V> {
 
     private void awaiting(Collection<Actor> actors){
         if (target == null) {
-            awaitingActors.addAll(actors);
+            awaitingActors.addAll(actors);  // this is probably not atomic. Is this OK?
             if (completed) {
                 notifyDependant();
             }

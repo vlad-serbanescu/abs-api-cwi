@@ -27,7 +27,7 @@ class Worker(var threshold: Int, var size: Int) extends SugaredActor with IWorke
           val b: Array[Int] = new Array[Int](newDepth)
           System.arraycopy(board, 0, b, 0, depth)
           b(depth) = i
-          if (FastFunctions.boardValid(b,newDepth)) {
+          if (FastFunctions.boardValid(b, newDepth)) {
             val fut: ABSFuture[List[Array[Int]]] = this.sendWork(b, newDepth, priority - 1)
             futures = fut +: futures
           }
